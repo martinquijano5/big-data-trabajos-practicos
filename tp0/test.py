@@ -9,6 +9,7 @@ from sklearn.metrics import classification_report, confusion_matrix, accuracy_sc
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_val_score
 from sklearn.model_selection import cross_val_predict
+from sklearn.linear_model import LogisticRegression
 
 iris_df = pd.read_csv('tp0/iris.csv')
 
@@ -173,10 +174,62 @@ handles, labels = scatter.legend_elements()
 legend = plt.legend(handles, np.unique(y), loc="upper right", title="Species")
 
 plt.tight_layout()
-plt.show()
 
 # en la figure 6 se ven 5 puntos rojos. Esos son los puntos que fueron mal clasificados.
 
-#    - Iris-setosa (púrpura): Claramente separada de las otras especies
-#    - Iris-versicolor (verde azulado): Ubicada en la región central
+#    - Iris-setosa (violeta): Claramente separada de las otras especies
+#    - Iris-versicolor (celeste): Ubicada en la región central
 #    - Iris-virginica (amarillo): Ubicada en la región superior derecha
+
+# el overlapping se da en flores que son iris-virginica pero se clasifican como iris-versicolor
+
+# logistic regression analysis
+print("\n--- Logistic Regression Analysis ---")
+
+# Prepare the data (same as before)
+X_log = iris_df.drop(['Species', 'Id'], axis=1)  # Features
+y_log = iris_df['Species']  # Target variable
+
+# Scale the features
+X_log_scaled = scaler.fit_transform(X_log)
+
+# Create and train the logistic regression model
+log_reg = LogisticRegression(max_iter=1000, random_state=42)
+
+# Perform cross-validation
+log_cv_scores = cross_val_score(log_reg, X_log_scaled, y_log, cv=10, scoring='accuracy')
+log_cv_accuracy = log_cv_scores.mean()
+
+print(f"\nLogistic Regression Cross-Validation Accuracy: {log_cv_accuracy:.4f}")
+
+# Get cross-validation predictions for classification report and confusion matrix
+log_y_pred = cross_val_predict(log_reg, X_log_scaled, y_log, cv=10)
+
+# Define log_misclassified here, right after getting log_y_pred
+log_misclassified = log_y_pred != y_log
+
+print("\nLogistic Regression Classification Report:")
+print(classification_report(y_log, log_y_pred))
+
+print("\nLogistic Regression Confusion Matrix:")
+log_conf_matrix = confusion_matrix(y_log, log_y_pred)
+print(log_conf_matrix)
+
+# Visualize the confusion matrix for logistic regression
+plt.figure(figsize=(8, 6))
+sns.heatmap(log_conf_matrix, annot=True, fmt='d', cmap='Blues',
+            xticklabels=np.unique(y_log),
+            yticklabels=np.unique(y_log))
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Logistic Regression Confusion Matrix')
+
+#la regresion logicstia tiene un poco menos de accuracy que el knn, aunque cambia la matriz de confusion repartiendo los errores entre versicolor y virginica, en vez de tener todos los errores en virginica como en el knn.
+
+plt.show(block=False)
+
+input("\nPresiona Enter para finalizar el programa y cerrar todas las figuras...")
+
+# This will be executed after the user presses Enter
+print("Programa finalizado. Cerrando figuras...")
+plt.close('all')  # Close all figures
