@@ -13,7 +13,7 @@ from sklearn.linear_model import LogisticRegression
 from scipy.stats import mode
 from sklearn.model_selection import GridSearchCV
 
-iris_df = pd.read_csv('tp0/iris.csv')
+iris_df = pd.read_csv('TP 1  Iris data set/iris.csv')
 
 print("head:")
 print(iris_df.head())

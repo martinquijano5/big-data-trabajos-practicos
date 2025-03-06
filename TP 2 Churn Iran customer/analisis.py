@@ -12,6 +12,9 @@ from sklearn.model_selection import cross_val_predict
 from sklearn.linear_model import LogisticRegression
 from scipy.stats import mode
 from sklearn.model_selection import GridSearchCV
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import RandomizedSearchCV
+from scipy.stats import randint
 
 # Set style for better visualizations
 sns.set(style="whitegrid")
@@ -183,86 +186,210 @@ plt.ylabel('Actual')
 plt.title(f'KNN Confusion Matrix (k={best_k})')
 plt.tight_layout()
 
-# Since we have many features, let's analyze feature importance indirectly
-# by looking at model performance when using only pairs of features
-print("\nAnalyzing feature importance for KNN model...")
 
-# Get all pairs of features
+# 6. Logistic Regression for Churn Prediction
+print("\n--- Logistic Regression Analysis for Churn Prediction ---")
+
+# Define hyperparameters to tune
+C_values = [0.001, 0.01, 0.1, 1, 10, 100, 1000]
+penalties = ['l1', 'l2', 'elasticnet', None]
+solvers = ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']
+
+# Not all combinations of penalty and solver are valid, so create valid combinations
+param_grid = []
+for penalty in penalties:
+    if penalty == 'l1':
+        param_grid.append({'C': C_values, 'penalty': ['l1'], 'solver': ['liblinear', 'saga']})
+    elif penalty == 'l2':
+        param_grid.append({'C': C_values, 'penalty': ['l2'], 'solver': ['newton-cg', 'lbfgs', 'liblinear', 'sag', 'saga']})
+    elif penalty == 'elasticnet':
+        param_grid.append({'C': C_values, 'penalty': ['elasticnet'], 'solver': ['saga']})
+    elif penalty is None:
+        param_grid.append({'C': [1.0], 'penalty': [None], 'solver': ['newton-cg', 'lbfgs', 'sag', 'saga']})
+
+# Use GridSearchCV to find the best hyperparameters
+print("\nPerforming grid search for logistic regression hyperparameters...")
+grid_search = GridSearchCV(
+    estimator=LogisticRegression(max_iter=2000, random_state=42),
+    param_grid=param_grid,
+    cv=10,
+    scoring='accuracy',
+    n_jobs=-1,
+    verbose=1
+)
+
+# Perform the grid search
+grid_search.fit(X_scaled, y)
+
+# Get the best parameters and score
+best_params = grid_search.best_params_
+best_score = grid_search.best_score_
+
+print(f"\nBest hyperparameters: {best_params}")
+print(f"Best cross-validation accuracy: {best_score:.4f}")
+
+# Train the final model with the best parameters
+best_log_reg = LogisticRegression(**best_params, random_state=42, max_iter=2000)
+best_log_reg.fit(X_scaled, y)
+
+# Get predictions using cross-validation to evaluate model performance
+log_y_pred = cross_val_predict(best_log_reg, X_scaled, y, cv=10)
+log_final_accuracy = accuracy_score(y, log_y_pred)
+
+print(f"\nFinal logistic regression model accuracy: {log_final_accuracy:.4f}")
+print("\nClassification report:")
+print(classification_report(y, log_y_pred))
+
+# Confusion matrix
+print("\nConfusion matrix:")
+log_conf_matrix = confusion_matrix(y, log_y_pred)
+print(log_conf_matrix)
+
+plt.figure(figsize=(8, 6))
+sns.heatmap(log_conf_matrix, annot=True, fmt='d', cmap='Blues',
+            xticklabels=['Non-Churn (0)', 'Churn (1)'],
+            yticklabels=['Non-Churn (0)', 'Churn (1)'])
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Logistic Regression Confusion Matrix')
+plt.tight_layout()
+
+# Analyze feature importance through coefficients
+if best_params['penalty'] != 'l1' or best_params['C'] > 0.01:  # Only if coefficients are significant
+    plt.figure(figsize=(12, 8))
+    feature_names = X.columns
+    
+    # For binary classification, we only have one set of coefficients
+    # But we'll create a DataFrame with a single row to match the heatmap style
+    coef_df = pd.DataFrame(
+        [best_log_reg.coef_[0]], 
+        columns=feature_names,
+        index=['Churn (1)']
+    )
+    
+    # Plot the coefficients as a heatmap
+    sns.heatmap(coef_df, annot=True, cmap='coolwarm', fmt='.3f')
+    plt.title('Coeficientes de regresion logistica por clase (modelo final)')
+    plt.tight_layout()
+
+
+print("\n--- Random Forest Analysis for Churn Prediction ---")
+
+# Define the parameter grid for RandomizedSearchCV
+param_dist = {
+    'n_estimators': randint(50, 500),
+    'max_depth': [None] + list(range(5, 30, 5)),
+    'min_samples_split': randint(2, 20),
+    'min_samples_leaf': randint(1, 10),
+    'max_features': ['sqrt', 'log2', None],
+    'bootstrap': [True, False],
+    'class_weight': ['balanced', 'balanced_subsample', None]
+}
+
+# Initialize Random Forest classifier
+rf = RandomForestClassifier(random_state=42)
+
+# Use RandomizedSearchCV to find good hyperparameters
+print("\nPerforming randomized search for Random Forest hyperparameters...")
+rf_search = RandomizedSearchCV(
+    estimator=rf,
+    param_distributions=param_dist,
+    n_iter=50,  # Number of parameter settings sampled
+    cv=5,
+    scoring='accuracy',
+    n_jobs=-1,
+    verbose=1,
+    random_state=42
+)
+
+# Perform the randomized search
+rf_search.fit(X_scaled, y)
+
+# Get the best parameters and score
+rf_best_params = rf_search.best_params_
+rf_best_score = rf_search.best_score_
+
+print(f"\nBest hyperparameters: {rf_best_params}")
+print(f"Best cross-validation accuracy: {rf_best_score:.4f}")
+
+# Train the final model with the best parameters
+best_rf = RandomForestClassifier(**rf_best_params, random_state=42)
+best_rf.fit(X_scaled, y)
+
+# Get predictions using cross-validation to evaluate model performance
+rf_y_pred = cross_val_predict(best_rf, X_scaled, y, cv=10)
+rf_final_accuracy = accuracy_score(y, rf_y_pred)
+
+print(f"\nFinal Random Forest model accuracy: {rf_final_accuracy:.4f}")
+print("\nClassification report:")
+print(classification_report(y, rf_y_pred))
+
+# Confusion matrix
+print("\nConfusion matrix:")
+rf_conf_matrix = confusion_matrix(y, rf_y_pred)
+print(rf_conf_matrix)
+
+plt.figure(figsize=(8, 6))
+sns.heatmap(rf_conf_matrix, annot=True, fmt='d', cmap='Blues',
+            xticklabels=['Non-Churn (0)', 'Churn (1)'],
+            yticklabels=['Non-Churn (0)', 'Churn (1)'])
+plt.xlabel('Predicted')
+plt.ylabel('Actual')
+plt.title('Random Forest Confusion Matrix')
+plt.tight_layout()
+
+# Feature importance analysis
+plt.figure(figsize=(12, 8))
 feature_names = X.columns
-feature_pairs = [(i, j) for i in range(len(feature_names)) for j in range(i+1, len(feature_names))]
+importances = best_rf.feature_importances_
+indices = np.argsort(importances)[::-1]
 
-# Evaluate each pair
-pair_scores = []
-for i, j in feature_pairs:
-    # Select only these two features
-    X_pair = X_scaled[:, [i, j]]
-    
-    # Evaluate with cross-validation
-    knn_pair = KNeighborsClassifier(n_neighbors=best_k)
-    score = cross_val_score(knn_pair, X_pair, y, cv=5, scoring='accuracy').mean()
-    
-    pair_scores.append((feature_names[i], feature_names[j], score))
+# Plot the feature importances
+plt.barh(range(len(indices)), importances[indices], align='center')
+plt.yticks(range(len(indices)), [feature_names[i] for i in indices])
+plt.xlabel('Feature Importance')
+plt.title('Random Forest Feature Importance')
+plt.tight_layout()
 
-# Sort pairs by score
-pair_scores.sort(key=lambda x: x[2], reverse=True)
+# Update the model comparison section to include Random Forest
+print("\n--- Model Comparison: KNN vs Logistic Regression vs Random Forest ---")
+print(f"KNN Accuracy: {final_accuracy:.4f}")
+print(f"Logistic Regression Accuracy: {log_final_accuracy:.4f}")
+print(f"Random Forest Accuracy: {rf_final_accuracy:.4f}")
 
-# Print top 5 feature pairs
-print("\nTop 5 feature pairs for KNN prediction:")
-for feat1, feat2, score in pair_scores[:5]:
-    print(f"{feat1} + {feat2}: {score:.4f}")
+# Create a bar chart to compare model performances
+plt.figure(figsize=(10, 6))
+models = ['KNN', 'Logistic Regression', 'Random Forest']
+accuracies = [final_accuracy, log_final_accuracy, rf_final_accuracy]
+colors = ['#66b3ff', '#ff9999', '#99ff99']
 
-# After finding the best feature pair and their indices
-best_pair = pair_scores[0]
-best_feat1, best_feat2 = best_pair[0], best_pair[1]
+plt.bar(models, accuracies, color=colors)
+plt.xlabel('Model')
+plt.ylabel('Accuracy')
+plt.title('Model Accuracy Comparison')
+plt.ylim(0.5, 1.0)  # Set y-axis to start from 0.5 for better visualization of differences
+plt.grid(axis='y', linestyle='--', alpha=0.7)
 
-# Get indices of these features
-idx1 = list(feature_names).index(best_feat1)
-idx2 = list(feature_names).index(best_feat2)
+# Add accuracy values on top of bars
+for i, v in enumerate(accuracies):
+    plt.text(i, v + 0.01, f'{v:.4f}', ha='center', fontweight='bold')
 
-# Create a mesh grid for the decision boundary
-x_min, x_max = X_scaled[:, idx1].min() - 1, X_scaled[:, idx1].max() + 1
-y_min, y_max = X_scaled[:, idx2].min() - 1, X_scaled[:, idx2].max() + 1
-xx, yy = np.meshgrid(np.linspace(x_min, x_max, 100),
-                     np.linspace(y_min, y_max, 100))
+plt.tight_layout()
 
-# Create a copy of the scaled data for predictions
-mesh_points = np.zeros((xx.size, X_scaled.shape[1]))
+# Analyze which instances are misclassified by all models vs. only some
+knn_misclassified = y_pred != y
+log_misclassified = log_y_pred != y
+rf_misclassified = rf_y_pred != y
 
+all_misclassified = np.logical_and(np.logical_and(knn_misclassified, log_misclassified), rf_misclassified)
+only_knn_misclassified = np.logical_and(knn_misclassified, np.logical_and(~log_misclassified, ~rf_misclassified))
+only_log_misclassified = np.logical_and(~knn_misclassified, np.logical_and(log_misclassified, ~rf_misclassified))
+only_rf_misclassified = np.logical_and(~knn_misclassified, np.logical_and(~log_misclassified, rf_misclassified))
 
-# Fill the mesh with the mean values of all features
-for i in range(X_scaled.shape[1]):
-    mesh_points[:, i] = np.mean(X_scaled[:, i])
-
-# Update only the two features we're plotting
-mesh_points[:, idx1] = xx.ravel()
-mesh_points[:, idx2] = yy.ravel()
-
-# Use the full model to predict on the mesh grid
-Z = best_knn.predict(mesh_points)
-Z = Z.reshape(xx.shape)
-
-# Plot the decision boundary
-plt.figure(figsize=(10, 8))
-plt.contourf(xx, yy, Z, alpha=0.3, cmap='coolwarm')
-
-# Plot the training points
-scatter = plt.scatter(X_scaled[:, idx1], X_scaled[:, idx2], c=y, 
-                     edgecolor='k', s=50, cmap='coolwarm')
-
-plt.xlabel(f'{best_feat1} (scaled)')
-plt.ylabel(f'{best_feat2} (scaled)')
-plt.title(f'KNN Decision Boundary Using Full Model\nProjected onto {best_feat1} vs {best_feat2} (k={best_k})')
-
-# Add a legend
-handles, labels = scatter.legend_elements()
-plt.legend(handles, ['Non-Churn (0)', 'Churn (1)'], loc="upper right")
-
-# Add explanation text
-plt.figtext(0.5, 0.01, 
-           "Note: This visualization shows the full model's decision boundary projected onto the two most important features.\nAll other features are held constant at their mean values.",
-           ha="center", fontsize=9, bbox={"facecolor":"white", "alpha":0.8, "pad":5})
-
-plt.tight_layout(rect=[0, 0.05, 1, 1])  # Adjust layout to make room for the note
+print(f"\nInstances misclassified by all models: {np.sum(all_misclassified)}")
+print(f"Instances misclassified only by KNN: {np.sum(only_knn_misclassified)}")
+print(f"Instances misclassified only by Logistic Regression: {np.sum(only_log_misclassified)}")
+print(f"Instances misclassified only by Random Forest: {np.sum(only_rf_misclassified)}")
 
 plt.show(block=False)
 input("\nPresiona Enter para finalizar el programa y cerrar todas las figuras...")
