@@ -26,3 +26,17 @@ Tariff Plan: binary (1: Pay as you go, 2: contractual)
 Status: binary (1: active, 2: non-active)
 Churn: binary (1: churn, 0: non-churn) - Class label
 Customer Value: The calculated value of customer
+
+
+
+
+Consigna:
+Realizar un análisis exhaustivo en parejas del dataset Iranian Customer Churn. Se trata de una empresa de telefonía que busca estudiar el churn (abandono) de sus clientes.
+
+Realicen el estudio más exhaustivo posible desde el análisis de datos que permita construir un modelo predictivo del abandono (churn).
+
+Aplique las herramientas de visualización y análisis de datos que conoce, tratando de explicar con cada técnica para qué la usa, que espera obtener de cada una de ellas, que resultados obtuvo y qué conclusiones se desprenden. Si no es capaz de responder alguna de estas preguntas para la herramienta que usó, haga el esfuerzo de poder elaborar una respuesta o evite usar dicha herramienta.
+
+El archivo Information.txt les muestra las variables del dataset y el archivo Iranian Customer Churn son los datos como tal.
+
+Los felicito por las entregas de hoy, estuvieron muy buenas. El nuevo dataset les da más libertad para explorar ya que son más columnas. Recuerden lo que hablamos hoy de armar posibles perfiles de clientes. Estos días les mando las notas de quienes no hayan presentado en clase. 
