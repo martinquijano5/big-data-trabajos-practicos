@@ -27,6 +27,9 @@ plt.rcParams['figure.figsize'] = (12, 8)
 # Load the dataset
 df = pd.read_csv('TP 2 Churn Iran customer/Iran Customer Churn.csv')
 
+# Remove Status variable from the analysis
+df = df.drop('Status', axis=1)
+
 # Basic data exploration
 print("Head of the dataset:")
 print(df.head())
@@ -102,8 +105,8 @@ for group_idx, feature_group in enumerate(feature_groups):
     plt.tight_layout()
 
 # 4. Categorical Features Analysis
-fig, axes = plt.subplots(1, 3, figsize=(20, 6))
-categorical_features = ['Complains', 'Tariff Plan', 'Status']
+fig, axes = plt.subplots(1, 2, figsize=(15, 6))  # Changed from 1,3 to 1,2
+categorical_features = ['Complains', 'Tariff Plan']  # Removed 'Status'
 
 for i, feature in enumerate(categorical_features):
     # Create a crosstab
@@ -469,10 +472,6 @@ summary_df['Tariff Plan==2 %'] = df.groupby('Cluster').apply(
     lambda x: (x['Tariff Plan'] == 2).mean() * 100
 ).values
 
-summary_df['Status==1 %'] = df.groupby('Cluster').apply(
-    lambda x: (x['Status'] == 1).mean() * 100
-).values
-
 # Transpose for better visualization (rows become metrics, columns become clusters)
 summary_df_transposed = summary_df.T
 
@@ -612,7 +611,7 @@ for i in range(optimal_k):
     print(cluster_df[cluster_features].mean())
     
     # Add categorical features analysis
-    for cat_feature in ['Complains', 'Tariff Plan', 'Status']:
+    for cat_feature in ['Complains', 'Tariff Plan']:  # Removed 'Status'
         print(f"\n{cat_feature} distribution in Cluster {i}:")
         print(cluster_df[cat_feature].value_counts(normalize=True))
 
