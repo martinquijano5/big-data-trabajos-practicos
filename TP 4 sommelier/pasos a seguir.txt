@@ -1,0 +1,57 @@
+https://archive.ics.uci.edu/dataset/186/wine+quality
+
+https://www.semanticscholar.org/paper/Modeling-wine-preferences-by-data-mining-from-Cortez-Cerdeira/bf15a0ccc14ac1deb5cea570c870389c16be019c
+
+Objetivo: Realizar un análisis exhaustivo de variables (gráfico y analítico) para determinar la calidad y el color del vino
+
+
+Data:
+
+El objetivo del experimento original era determinar la preferencia de vinos de los consumidores. Es por eso que cada muestra de vino fue evaluada por al menos tres sommeliers (o "sensory assessors", como dice el paper del estudio original), y la mediana de esas evaluaciones es lo que vemos en el dataset como quality. Es por este motivo que hay dos datasets separados
+
+Los datos fueron tomados desde mayo de 2004 a febrero de 2007, por lo que si queremos evaluar vinos actuales, tendriamos que considerar cambios en la forma de producir vino que sucedieron entre ese periodo y el presente. Tambien habria que evaluar cambios en la forma de evaluar la calidad del vino
+
+Como bien dice el paper, es importante hacer una buena seleccion de variables, ya que esto lleva a modelos mas simples, mas faciles de interpetar y que pueden tener mejor performance. Modelos mas complejos pueden tener problemas de overfitting
+
+Las muestras son de vinho verde, del "northwest region of Portugal". Es importante considerar esto ya que dependiendo la region los valores cambian (hay modelos que predicen la region del vino con 100% de acc)
+
+(with 4898 white and 1599 red entries)
+
+
+Cosas a considerar:
+
+We will adopt a regression approach, which preserves the order of the preferences. For instance, if the true grade is 3, then a model that predicts 4 is better than one that predicts 7. (pagina 7 del paper)
+
+haces matriz de confusion mostrando en donde se equivoca
+
+hay dos objetivos: 1. predecir calidad 2. predecir color. Podriamos hacer dos archivos distintos, uno para cada objetivo. Tambien probar de hacer un modelo que intente hacer las dos cosas a la vez
+
+
+pasos:
+graficos de todas las variables: boxplot y distribucion
+matriz de correlacion de pearson ?
+
+modelo predecir color como en pdf foto (knn o k-means)
+
+grid search para optimizacion de hiper parametros
+
+usar k-folds para test y train
+
+ciclo iterativo:
+	hacer random forest y regresion logistica con grid search para optimizar hiperparametros
+	ver acc, matriz de confusion y feature importance
+	en base a feature importance, borrar, juntar o transformar variables
+	hacer nuevo modelo
+	repetir hasta tener pocas variables --> ver si al sacar variables capaz empeora la acc pero hace al modelo mas comprensible
+	
+	
+	
+	ver si es mejor eso o un analisis de sensibilidad para descartar variables
+	
+	
+a la hora de evaluar la accuracy del modelo de calidad, hacer como el paper original --> primero calcular accuracy de pegarle exacto, desp hacer accuracy pegandole al exacto, uno menos o uno mas.  --> pagina 16 del paper
+	
+explorar utlidad del modelo --> pagina 17 del paper
+	
+	
+al final, ver con las variables que quedaron como se ve el k-means

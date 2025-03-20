@@ -1,11 +1,11 @@
 las transformaciones estan mal. hay que invertir la escala, cuanto menos valor, mejor cliente es. Esto deberia calcular el riesgo, por lo que cuanto mas de el resultado, mas riesgo --> peor cliente
-el resultado del modelo tiene que ser 1 si se aprueba y 2 si no se aprueba
+el resultado del modelo tiene que ser 0 si se aprueba y 1 si no se aprueba
 
 
 
-1: status-cuenta --> guita que tiene en su cuenta (negativo si saco un credito) (transformar valores: a14=0, a11=1, a12=2, 13=3
+1: status-cuenta --> guita que tiene en su cuenta (negativo si saco un credito) (transformar valores: A14=2, A11=1, A12=3, A13=4)
 
-2: duracion-meses --> meses que lleva abierta la cuenta (hacer transformacion como pide el word)
+2: duracion-meses --> meses que lleva abierta la cuenta (<=10 = 1, <=20 = 2, ...)
 
 3: credit-history --> si pago a tiempo los creditos (hacer transformacion a30=1, a31=2, a32=3, a33=4, a34=5)
 
@@ -13,36 +13,36 @@ el resultado del modelo tiene que ser 1 si se aprueba y 2 si no se aprueba
 
 5: credit-amount --> cantidad de plata del credito (no hacerle ninguna transformacion)
 
-6: saving-account-amount --> (hacer transformacion a65=1, a61=2, a62=3, a63=4, a64=5)
+6: saving-account-amount --> (hacer transformacion a65=1, a61=2, a62=3, a63=2, a64=1)
 
-7: antiguedad-trabajo --> hace cuanto esta en el trabajo (hacer transformacion)
+7: antiguedad-trabajo --> hace cuanto esta en el trabajo (hacer transformacion a75=1, a74=2, a73=3, a72=4, a71=5)
 
 8: tasa-interes --> (numeros enteros) (no transformar)
 
 9: estado-civil --> (hacer transformacion) (ver que tipo de transformacion hacer)
 
-10: garante --> (hacer transformacion a101=1, a102=2, a103=3)
+10: garante --> (hacer transformacion a101=3, a102=2, a103=1)
 
 11: 
 
-12: propiedades --> (hacer transformacion a124=1, a123=2, a122=3, a121=4)
+12: propiedades --> (hacer transformacion a124=4, a123=3, a122=2, a121=1)
 
 13: edad --> categorizar en menor de 30=1 y mayor de 30=1
 
 14: 
 
-15: alojamiento --> si vive con los papas, alquila o es propietario (hacer transformacion a153=1, a151=2, a153=3)
+15: alojamiento --> si vive con los papas, alquila o es propietario (hacer transformacion a153=3, a151=2, a153=1)
 
 16: cantidad-creditos --> cantidad de creditos que tiene en el banco (no transformar)
 
-17: trabajo --> (hacer transformacion a171=1, a172=2, a173=3, a174=4)
+17: trabajo --> (hacer transformacion a171=4, a172=3, a173=2, a174=1)
 
 18: cantidad-manutencion --> cantidad personas a las que mantiene (no transformar)
 
-19: telefono --> (transformar a191=0, a192=1)
+19: telefono --> (transformar a191=1, a192=0)
 
-20: trabajo-domestico --> (transformar a201=1, a202=0)
+20: trabajo-domestico --> (transformar a201=0, a202=1)
 
-
+rechazo: pasar valor 1 a 0 y 2 a 1
 
 objetivo: reducir el error de predecir que es buen cliente cuando en realidad es malo (falso positivo // error tipo 1)
