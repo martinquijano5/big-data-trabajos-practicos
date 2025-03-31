@@ -15,27 +15,24 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 # Función para crear el modelo de red neuronal de dos capas ocultas
 def create_model_8():
     model = Sequential([
-        # Primera capa oculta con 20 neuronas y activación ReLU
-        Dense(10, activation='relu', input_shape=(2,)),
-        # Segunda capa oculta con 15 neuronas y activación ReLU
-        Dense(10, activation='relu'),
-        # Tercera capa oculta con 10 neuronas y activación ReLU
-        Dense(10, activation='relu'),
-
-
+        # Primera capa oculta con regularización L2 y 8 neuronas
+        Dense(8, activation='relu', kernel_regularizer=l2(0.0), input_shape=(2,)),
+        # Segunda capa oculta con regularización L2 y 8 neuronas
+        Dense(8, activation='relu', kernel_regularizer=l2(0.0)),
         # Capa de salida con 1 neurona y activación sigmoid
         Dense(1, activation='sigmoid')
     ])
     
-    # Compilar el modelo
+    # Compilar el modelo con learning rate fijo
+    optimizer = Adam(learning_rate=0.01)
+    
     model.compile(
-        optimizer=Adam(),
+        optimizer=optimizer,
         loss='binary_crossentropy',
         metrics=['accuracy']
     )
     
     return model
-
 
 # Función para crear el modelo de red neuronal de 7 capas ocultas
 def create_model_1():
@@ -189,9 +186,8 @@ for fold, (train_idx, val_idx) in enumerate(kf.split(X8)):
     history = model.fit(
         X_train, y_train,
         epochs=100,
-        batch_size=32,
+        batch_size=30,
         validation_data=(X_val, y_val),
-        verbose=1
     )
     all_histories_8.append(history)
     
@@ -226,8 +222,6 @@ final_history_1 = final_model_1.fit(
     X1, y1,
     epochs=100,
     batch_size=32,
-    validation_split=0.2,
-    verbose=1
 )
 
 # Modelo final para Dataset 8
@@ -236,8 +230,6 @@ final_history_8 = final_model_8.fit(
     X8, y8,
     epochs=100,
     batch_size=32,
-    validation_split=0.2,
-    verbose=1
 )
 
 # Función para crear la superficie de decisión
@@ -362,4 +354,4 @@ print(f"F1 Score: {f1_8:.4f}")
 plt.show(block=False)
 input("\nPresiona Enter para finalizar el programa y cerrar todas las figuras...")
 print("Programa finalizado. Cerrando figuras...")
-plt.close('all') 
+plt.close('all')
