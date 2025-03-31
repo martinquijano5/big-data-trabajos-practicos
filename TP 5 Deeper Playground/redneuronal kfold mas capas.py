@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import seaborn as sns
 from tensorflow.keras.regularizers import l2
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 # Función para crear el modelo de red neuronal de dos capas ocultas
 def create_model_8():
@@ -36,11 +37,11 @@ def create_model_8():
     return model
 
 
-# Función para crear el modelo de red neuronal de tres capas ocultas
+# Función para crear el modelo de red neuronal de 7 capas ocultas
 def create_model_1():
     model = Sequential([
         # Primera capa oculta con 10 neuronas y activación ReLU
-        Dense(50, activation='relu', input_shape=(2,)),
+        Dense(10, activation='relu', input_shape=(2,)),
         # Segunda capa oculta con 10 neuronas y activación ReLU
         Dense(10, activation='relu'),
         # Tercera capa oculta con 10 neuronas y activación ReLU
@@ -52,6 +53,12 @@ def create_model_1():
         # Sexta capa oculta con 10 neuronas y activación ReLU
         Dense(10, activation='relu'),
         # Septima capa oculta con 10 neuronas y activación ReLU
+        Dense(10, activation='relu'),
+        # Octava capa oculta con 10 neuronas y activación ReLU
+        Dense(10, activation='relu'),
+        # Novena capa oculta con 10 neuronas y activación ReLU
+        Dense(10, activation='relu'),
+        # Decima capa oculta con 10 neuronas y activación ReLU
         Dense(10, activation='relu'),
 
         
@@ -327,6 +334,30 @@ plt.tight_layout()
 # Superficies de decisión con los modelos finales
 plot_decision_boundary(final_model_1, X1, y1, 'Superficie de Decisión - Dataset 1')
 plot_decision_boundary(final_model_8, X8, y8, 'Superficie de Decisión - Dataset 8')
+
+# Calcular y mostrar métricas adicionales para los modelos finales
+accuracy_1 = accuracy_score(y1, y_pred_final_1)
+precision_1 = precision_score(y1, y_pred_final_1)
+recall_1 = recall_score(y1, y_pred_final_1)
+f1_1 = f1_score(y1, y_pred_final_1)
+
+print("\nMétricas para el modelo final - Dataset 1:")
+print(f"Accuracy: {accuracy_1:.4f}")
+print(f"Precision: {precision_1:.4f}")
+print(f"Recall: {recall_1:.4f}")
+print(f"F1 Score: {f1_1:.4f}")
+
+# Métricas para Dataset 8
+accuracy_8 = accuracy_score(y8, y_pred_final_8)
+precision_8 = precision_score(y8, y_pred_final_8)
+recall_8 = recall_score(y8, y_pred_final_8)
+f1_8 = f1_score(y8, y_pred_final_8)
+
+print("\nMétricas para el modelo final - Dataset 8:")
+print(f"Accuracy: {accuracy_8:.4f}")
+print(f"Precision: {precision_8:.4f}")
+print(f"Recall: {recall_8:.4f}")
+print(f"F1 Score: {f1_8:.4f}")
 
 plt.show(block=False)
 input("\nPresiona Enter para finalizar el programa y cerrar todas las figuras...")
