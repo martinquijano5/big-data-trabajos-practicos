@@ -15,10 +15,10 @@ from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_sc
 # Función para crear el modelo de red neuronal de dos capas ocultas
 def create_model_8():
     model = Sequential([
-        # Primera capa oculta con regularización L2 y 8 neuronas
-        Dense(8, activation='relu', kernel_regularizer=l2(0.0), input_shape=(2,)),
-        # Segunda capa oculta con regularización L2 y 8 neuronas
-        Dense(8, activation='relu', kernel_regularizer=l2(0.0)),
+        # Primera capa oculta con 8 neuronas
+        Dense(8, activation='relu', input_shape=(2,)),
+        # Segunda capa oculta con 8 neuronas
+        Dense(8, activation='relu'),
         # Capa de salida con 1 neurona y activación sigmoid
         Dense(1, activation='sigmoid')
     ])
