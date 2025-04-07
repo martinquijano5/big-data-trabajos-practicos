@@ -18,7 +18,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import PCA
 
 
-def three_var_model():
+def full_model():
     model = Sequential([
         Dense(3, activation='linear', input_shape=(4,), kernel_regularizer=l1(0.03)), #l1 regularizer mete feature importance
         Dense(3, activation='softmax')
@@ -54,7 +54,7 @@ def train_complete_model(df):
     X_scaled = scaler.fit_transform(X)
     
     # Create and train model
-    model = three_var_model()
+    model = full_model()
     history = model.fit(
         X_scaled, y_one_hot,
         epochs=300,
@@ -322,6 +322,24 @@ plot_feature_importance(results)
 
 # Plot decision boundary with PCA
 plot_decision_boundary_pca(results, class_names)
+
+# Get weights and biases for Layer 1
+layer1_weights = results['model'].layers[0].get_weights()[0]  # Shape: (4, 3)
+layer1_biases = results['model'].layers[0].get_weights()[1]   # Shape: (3,)
+
+# Get weights and biases for Layer 2
+layer2_weights = results['model'].layers[1].get_weights()[0]  # Shape: (3, 3)
+layer2_biases = results['model'].layers[1].get_weights()[1]   # Shape: (3,)
+
+# Print them
+print("Layer 1 Weights:")
+print(layer1_weights)
+print("\nLayer 1 Biases:")
+print(layer1_biases)
+print("\nLayer 2 Weights:")
+print(layer2_weights)
+print("\nLayer 2 Biases:")
+print(layer2_biases)
 
 plt.show(block=False)
 input("\nPresiona Enter para finalizar el programa y cerrar todas las figuras...")

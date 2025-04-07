@@ -171,6 +171,28 @@ histograms(iris_df)
 scatter(iris_df)
 plot_3d(iris_df)
 
+
+
+# Standardize the data (excluding Id and Species columns)
+features = ['SepalLengthCm', 'SepalWidthCm', 'PetalLengthCm', 'PetalWidthCm']
+scaler = StandardScaler()
+scaled_features = scaler.fit_transform(iris_df[features])
+scaled_df = pd.DataFrame(scaled_features, columns=features)
+
+# Print the standardized data
+print("\nComplete Standardized Iris Data:")
+pd.set_option('display.max_rows', None)  # Show all rows
+print(scaled_df)
+pd.reset_option('display.max_rows')  # Reset to default setting
+
+# Save scaled data to CSV with explicit comma separator
+scaled_csv_path = os.path.join(graficos_dir, 'scaled_iris_data.csv')
+scaled_df.to_csv(scaled_csv_path, sep=',', index=False)
+print(f"\nScaled data saved to: {scaled_csv_path}")
+
+
+
+
 plt.show(block=False)
 input("\nPresiona Enter para finalizar el programa y cerrar todas las figuras...")
 print("Programa finalizado. Cerrando figuras...")
