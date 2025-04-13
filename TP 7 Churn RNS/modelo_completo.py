@@ -12,7 +12,8 @@ from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, accuracy_s
 
 def full_model(shape):
     model = Sequential([
-        Dense(8, activation='relu', input_shape=(shape,), kernel_regularizer=l1(0.03)),
+        Dense(16, activation='relu', input_shape=(shape,), kernel_regularizer=l1(0.03)),
+        Dense(8, activation='relu', kernel_regularizer=l1(0.03)),
         Dense(1, activation='sigmoid')  # Binary classification (Churn vs No Churn)
     ])
     
@@ -27,28 +28,22 @@ def full_model(shape):
     return model
 
 def train_complete_model(df):
-    feature_cols = df.drop('Churn', axis=1).columns.tolist()
+    # Define categorical and numerical columns
+    categorical_cols = ['Complains', 'Charge  Amount', 'Age Group', 'Tariff Plan']
+    numerical_cols = [col for col in df.columns if col != 'Churn' and col not in categorical_cols]
     
-    #no quiero que escalemos las variables binarias, porque no tienen sentido escalar 0s y 1s
-    binary_cols = []
-    non_binary_cols = []
+    # Create a list that represents the order of features in X_scaled
+    feature_cols = categorical_cols + numerical_cols
     
-    for col in feature_cols:
-        if set(df[col].unique()).issubset({0, 1}):
-            binary_cols.append(col)
-        else:
-            non_binary_cols.append(col)
-    
-    # Split the data into binary and non-binary features
-    X_binary = df[binary_cols].values
-    X_non_binary = df[non_binary_cols].values
+    X_categorical = df[categorical_cols].values
+    X_numerical = df[numerical_cols].values
     
     # Scale the data
     scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X_non_binary)
+    X_numerical_scaled = scaler.fit_transform(X_numerical)
     
-    #concatenamos las variables binarias y las no binarias
-    X_scaled = np.concatenate([X_binary, X_scaled], axis=1)
+    # Concatenate the variables
+    X_scaled = np.concatenate([X_categorical, X_numerical_scaled], axis=1)
     
     y = df['Churn'].values
 
@@ -207,7 +202,7 @@ def plot_feature_importance(results):
     
     # Create horizontal bar chart
     bars = plt.barh(range(len(indices)), importance[indices], align='center')
-    plt.yticks(range(len(indices)), [feature_names[i] for i in indices])
+    plt.yticks(range(len(indices)), [feature_names[indices[i]] for i in range(len(indices))])
     
     # Add text labels
     for bar in bars:
@@ -328,8 +323,8 @@ def sensibility_analisis(results):
     
     # Create a figure for the timeline view
     plt.figure(figsize=(14, 8))
-    plt.title('Evolución de la precisión al eliminar características', fontsize=14)
-    plt.ylabel('Precisión', fontsize=12)
+    plt.title('Evolución de la accuracy al eliminar características', fontsize=14)
+    plt.ylabel('Accuracy', fontsize=12)
     plt.grid(True, alpha=0.3)
     
     # Plot accuracy - including initial accuracy and all iterations
@@ -371,6 +366,9 @@ def sensibility_analisis(results):
 def print_model_weights(results, num_layers):
     model = results['model']
     
+    # Create a dictionary to store all weights and biases for Excel export
+    excel_data = {}
+    
     for i in range(num_layers):
         layer_weights = model.layers[i].get_weights()[0]
         layer_biases = model.layers[i].get_weights()[1]
@@ -379,6 +377,70 @@ def print_model_weights(results, num_layers):
         print(layer_weights)
         print(f"\nLayer {i+1} Biases:")
         print(layer_biases)
+        
+        # Add to excel data dictionary
+        excel_data[f'Layer_{i+1}_Weights'] = layer_weights
+        excel_data[f'Layer_{i+1}_Biases'] = layer_biases
+    
+    # Export to Excel using pandas ExcelWriter with openpyxl engine
+    try:
+        writer = pd.ExcelWriter(os.path.join(current_dir, 'model_weights.xlsx'), engine='openpyxl')
+        
+        # Create DataFrames for each layer and write to separate sheets
+        for i in range(num_layers):
+            # Weights
+            weights = excel_data[f'Layer_{i+1}_Weights']
+            if i == 0:
+                # For first layer, use feature names as indices
+                weights_df = pd.DataFrame(
+                    weights, 
+                    index=results['feature_names'],
+                    columns=[f'Neuron_{j+1}' for j in range(weights.shape[1])]
+                )
+            else:
+                # For other layers, use generic indices
+                weights_df = pd.DataFrame(
+                    weights,
+                    columns=[f'Neuron_{j+1}' for j in range(weights.shape[1])]
+                )
+            
+            # Biases
+            biases = excel_data[f'Layer_{i+1}_Biases']
+            biases_df = pd.DataFrame(biases, columns=['Bias'])
+            
+            # Write to Excel
+            weights_df.to_excel(writer, sheet_name=f'Layer_{i+1}_Weights')
+            biases_df.to_excel(writer, sheet_name=f'Layer_{i+1}_Biases')
+        
+        writer.close()
+        print(f"\nModel weights and biases exported to: {os.path.join(current_dir, 'model_weights.xlsx')}")
+    except ImportError:
+        # If openpyxl is not available, fallback to CSV export
+        print("\nCould not use Excel writer. Exporting as CSV files instead.")
+        for i in range(num_layers):
+            # Weights
+            weights = excel_data[f'Layer_{i+1}_Weights']
+            if i == 0:
+                weights_df = pd.DataFrame(
+                    weights, 
+                    index=results['feature_names'],
+                    columns=[f'Neuron_{j+1}' for j in range(weights.shape[1])]
+                )
+            else:
+                weights_df = pd.DataFrame(
+                    weights,
+                    columns=[f'Neuron_{j+1}' for j in range(weights.shape[1])]
+                )
+            
+            # Biases
+            biases = excel_data[f'Layer_{i+1}_Biases']
+            biases_df = pd.DataFrame(biases, columns=['Bias'])
+            
+            # Save as CSV
+            weights_df.to_csv(os.path.join(current_dir, f'layer_{i+1}_weights.csv'))
+            biases_df.to_csv(os.path.join(current_dir, f'layer_{i+1}_biases.csv'))
+        
+        print(f"\nModel weights and biases exported as CSV files to: {current_dir}")
 
 # Set up directories
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -401,22 +463,23 @@ plot_confusion_matrix(results)
 plot_feature_importance(results)
 plot_model_accuracy(results)
 
+
 # Get the sensitivity analysis results
-sensitivity_results = sensibility_analisis(results)
+#sensitivity_results = sensibility_analisis(results)
 
 # Store the best model
-best_model = sensitivity_results['best_model']
-most_important_features = sensitivity_results['most_important_features']
-best_model_features = sensitivity_results['best_model_features']
-best_accuracy = sensitivity_results['best_accuracy']
+#best_model = sensitivity_results['best_model']
+#most_important_features = sensitivity_results['most_important_features']
+#best_model_features = sensitivity_results['best_model_features']
+#best_accuracy = sensitivity_results['best_accuracy']
 
-print(f"Best model: {best_model}")
-print(f"Most important features: {most_important_features}")
-print(f"Best model features: {best_model_features}")
-print(f"Best accuracy: {best_accuracy}")
+#print(f"Best model: {best_model}")
+#print(f"Most important features: {most_important_features}")
+#print(f"Best model features: {best_model_features}")
+#print(f"Best accuracy: {best_accuracy}")
 
 # Print model weights and biases
-print_model_weights(results, 2)
+print_model_weights(results, 3)
 
 # Show plots
 plt.show(block=False)
