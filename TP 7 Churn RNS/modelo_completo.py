@@ -29,7 +29,7 @@ def full_model(shape):
 
 def train_complete_model(df):
     # Define categorical and numerical columns
-    categorical_cols = ['Complains', 'Charge  Amount', 'Age Group', 'Tariff Plan']
+    categorical_cols = ['Complains', 'Charge  Amount', 'Tariff Plan']
     numerical_cols = [col for col in df.columns if col != 'Churn' and col not in categorical_cols]
     
     # Create a list that represents the order of features in X_scaled
@@ -92,6 +92,7 @@ def plot_training_results(results):
     plt.plot(results['history'].history['val_loss'], color='blue', 
             alpha=0.5, linestyle='--', label='Val loss')
     
+    plt.ylim(0, 1)  # Set y-axis from 0 to 1
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(graficos_dir, 'loss_completo.png'), dpi=300)
@@ -107,11 +108,12 @@ def plot_training_results(results):
     plt.plot(results['history'].history['val_accuracy'], color='green', 
             alpha=0.5, linestyle='--', label='Val accuracy')
     
+    plt.ylim(0, 1)  # Set y-axis from 0 to 1
     plt.legend()
     plt.tight_layout()
     plt.savefig(os.path.join(graficos_dir, 'accuracy_completo.png'), dpi=300)
 
-def plot_model_accuracy(results):
+def plot_model_accuracy(results, output_filename='model_metrics.png'):
     y_true = results['y']
     y_pred = results['y_pred']
     
@@ -160,8 +162,8 @@ def plot_model_accuracy(results):
     plt.title('Métricas del Modelo', fontsize=14, pad=20)
     plt.tight_layout()
     
-    # Save figure
-    plt.savefig(os.path.join(graficos_dir, 'model_metrics.png'), dpi=300)
+    # Save figure with the specified filename
+    plt.savefig(os.path.join(graficos_dir, output_filename), dpi=300)
 
 def plot_confusion_matrix(results):
     y = results['y']
@@ -349,6 +351,40 @@ def sensibility_analisis(results):
     print(f"\nBest model had {len(best_model_features)} features with accuracy: {best_accuracy:.4f}")
     print(f"Best model features: {', '.join(best_model_features)}")
     
+    # Save the best model metrics as an image
+    # If the best model is not the original model, we need to generate its predictions
+    if best_model_index > 0:
+        # Get all removed features up to the best model index
+        features_to_remove = removed_features[:best_model_index]
+        
+        # Start with a copy of the original data and features
+        best_X = original_X.copy()
+        best_features = feature_names.copy()
+        
+        # Remove each feature one by one
+        for feature_to_remove in features_to_remove:
+            idx_to_remove = best_features.index(feature_to_remove)
+            best_X = np.delete(best_X, idx_to_remove, axis=1)
+            best_features.remove(feature_to_remove)
+        
+        # Verify we have the correct number of features
+        assert len(best_features) == len(best_model_features), f"Feature count mismatch: {len(best_features)} vs expected {len(best_model_features)}"
+        
+        # Get best model's predictions
+        y_pred_best = (best_model.predict(best_X, verbose=0) > 0.5).astype(int)
+        
+        # Create results dictionary for the best model
+        best_results = {
+            'y': y,
+            'y_pred': y_pred_best
+        }
+        
+        # Save best model metrics
+        plot_model_accuracy(best_results, 'best_model_metrics@model_metrics.png')
+    else:
+        # If the best model is the original model, just use the original results
+        plot_model_accuracy(results, 'best_model_metrics@model_metrics.png')
+    
     # Return the results for further analysis if needed
     return {
         'accuracies': accuracies,
@@ -383,64 +419,121 @@ def print_model_weights(results, num_layers):
         excel_data[f'Layer_{i+1}_Biases'] = layer_biases
     
     # Export to Excel using pandas ExcelWriter with openpyxl engine
-    try:
-        writer = pd.ExcelWriter(os.path.join(current_dir, 'model_weights.xlsx'), engine='openpyxl')
+    # Make sure openpyxl is installed: pip install openpyxl
+    writer = pd.ExcelWriter(os.path.join(current_dir, 'model_weights.xlsx'), engine='openpyxl')
+    
+    # Create DataFrames for each layer and write to separate sheets
+    for i in range(num_layers):
+        # Weights
+        weights = excel_data[f'Layer_{i+1}_Weights']
+        if i == 0:
+            # For first layer, use feature names as indices
+            weights_df = pd.DataFrame(
+                weights, 
+                index=results['feature_names'],
+                columns=[f'Neuron_{j+1}' for j in range(weights.shape[1])]
+            )
+        else:
+            # For other layers, use generic indices
+            weights_df = pd.DataFrame(
+                weights,
+                columns=[f'Neuron_{j+1}' for j in range(weights.shape[1])]
+            )
         
-        # Create DataFrames for each layer and write to separate sheets
-        for i in range(num_layers):
-            # Weights
-            weights = excel_data[f'Layer_{i+1}_Weights']
-            if i == 0:
-                # For first layer, use feature names as indices
-                weights_df = pd.DataFrame(
-                    weights, 
-                    index=results['feature_names'],
-                    columns=[f'Neuron_{j+1}' for j in range(weights.shape[1])]
-                )
-            else:
-                # For other layers, use generic indices
-                weights_df = pd.DataFrame(
-                    weights,
-                    columns=[f'Neuron_{j+1}' for j in range(weights.shape[1])]
-                )
-            
-            # Biases
-            biases = excel_data[f'Layer_{i+1}_Biases']
-            biases_df = pd.DataFrame(biases, columns=['Bias'])
-            
-            # Write to Excel
-            weights_df.to_excel(writer, sheet_name=f'Layer_{i+1}_Weights')
-            biases_df.to_excel(writer, sheet_name=f'Layer_{i+1}_Biases')
+        # Biases
+        biases = excel_data[f'Layer_{i+1}_Biases']
+        biases_df = pd.DataFrame(biases, columns=['Bias'])
         
-        writer.close()
-        print(f"\nModel weights and biases exported to: {os.path.join(current_dir, 'model_weights.xlsx')}")
-    except ImportError:
-        # If openpyxl is not available, fallback to CSV export
-        print("\nCould not use Excel writer. Exporting as CSV files instead.")
-        for i in range(num_layers):
-            # Weights
-            weights = excel_data[f'Layer_{i+1}_Weights']
-            if i == 0:
-                weights_df = pd.DataFrame(
-                    weights, 
-                    index=results['feature_names'],
-                    columns=[f'Neuron_{j+1}' for j in range(weights.shape[1])]
-                )
-            else:
-                weights_df = pd.DataFrame(
-                    weights,
-                    columns=[f'Neuron_{j+1}' for j in range(weights.shape[1])]
-                )
-            
-            # Biases
-            biases = excel_data[f'Layer_{i+1}_Biases']
-            biases_df = pd.DataFrame(biases, columns=['Bias'])
-            
-            # Save as CSV
-            weights_df.to_csv(os.path.join(current_dir, f'layer_{i+1}_weights.csv'))
-            biases_df.to_csv(os.path.join(current_dir, f'layer_{i+1}_biases.csv'))
-        
-        print(f"\nModel weights and biases exported as CSV files to: {current_dir}")
+        # Write to Excel
+        weights_df.to_excel(writer, sheet_name=f'Layer_{i+1}_Weights')
+        biases_df.to_excel(writer, sheet_name=f'Layer_{i+1}_Biases')
+    
+    writer.close()
+    print(f"\nModel weights and biases exported to: {os.path.join(current_dir, 'model_weights.xlsx')}")
+
+def create_simple_model(df, simple_features, output_filename='simple_model_metrics.png'):
+    print("\nCreating a simple model with the two most important features...")
+    print(f"Using features: {simple_features}")
+
+    # Use unscaled data directly
+    X_simple = df[simple_features].values
+    y = df['Churn'].values
+
+    # Create and train the simple model
+    simple_model = full_model(X_simple.shape[1])
+    simple_history = simple_model.fit(
+        X_simple, y,
+        epochs=300,
+        batch_size=32,
+        verbose=1,
+        validation_split=0.2
+    )
+
+    # Get predictions
+    y_pred_proba = simple_model.predict(X_simple)
+    y_pred = (y_pred_proba > 0.5).astype(int)
+
+    # Store results
+    simple_results = {
+        'y': y,
+        'y_pred': y_pred
+    }
+
+    # Create the metrics table
+    plot_model_accuracy(simple_results, output_filename)
+    
+    # Return both results and the model
+    return simple_results, simple_model
+
+def plot_decision_boundary(df, simple_features, simple_model):
+    print("\nCreating decision boundary plot for the two-variable model...")
+    
+    # Extract features directly without scaling
+    X = df[simple_features].values
+    y = df['Churn'].values
+    
+    # Create a mesh grid
+    h = 0.02  # Step size in the mesh
+    x_min, x_max = X[:, 0].min() - 1, X[:, 0].max() + 1
+    y_min, y_max = X[:, 1].min() - 1, X[:, 1].max() + 1
+    xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+    
+    # Make predictions on the mesh grid
+    Z = simple_model.predict(np.c_[xx.ravel(), yy.ravel()])
+    Z = (Z > 0.5).astype(int)
+    Z = Z.reshape(xx.shape)
+    
+    # Create figure
+    plt.figure(figsize=(10, 8))
+    
+    # Plot decision boundary with distinct colors for each class
+    # Use a binary colormap with only two colors (not a gradient)
+    plt.contourf(xx, yy, Z, alpha=0.6, levels=1, colors=['peachpuff', 'lightblue'])
+    
+    # Plot data points
+    markers = ['o', '^']
+    colors = ['maroon', 'navy']
+    labels = ['No Churn', 'Churn']
+    
+    for i, label in enumerate([0, 1]):
+        plt.scatter(X[y == label, 0], X[y == label, 1], 
+                   c=colors[i], marker=markers[i], 
+                   edgecolors='k', s=30, label=labels[i])
+    
+    # Add feature names as axis labels
+    plt.xlabel(f"Frequency of use", fontsize=12)
+    plt.ylabel(f"Frequency of SMS", fontsize=12)
+    
+    # Add legend
+    plt.legend(title="Churn")
+    
+    plt.title("Límite de Decisión - Modelo con Dos Variables", fontsize=14)
+    plt.tight_layout()
+    
+    # Save the plot
+    plt.savefig(os.path.join(graficos_dir, 'decision_boundary.png'), dpi=300)
+    
+    return plt
 
 # Set up directories
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -449,7 +542,9 @@ os.makedirs(graficos_dir, exist_ok=True)
 
 # Load data
 df = pd.read_csv('TP 7 Churn RNS/Iran Customer Churn.csv')
-df = df.drop(['Status','Age'], axis=1)  # Remove Status variable
+df = df.drop(['Status','Age', 'Age Group'], axis=1)  # Remove Status, age and age group variables
+df['Tariff Plan'] = df['Tariff Plan'].replace({2: 1, 1: 0})
+
 
 # Create and train the model
 results = train_complete_model(df)
@@ -465,21 +560,27 @@ plot_model_accuracy(results)
 
 
 # Get the sensitivity analysis results
-#sensitivity_results = sensibility_analisis(results)
+sensitivity_results = sensibility_analisis(results)
 
 # Store the best model
-#best_model = sensitivity_results['best_model']
-#most_important_features = sensitivity_results['most_important_features']
-#best_model_features = sensitivity_results['best_model_features']
-#best_accuracy = sensitivity_results['best_accuracy']
+best_model = sensitivity_results['best_model']
+most_important_features = sensitivity_results['most_important_features']
+best_model_features = sensitivity_results['best_model_features']
+best_accuracy = sensitivity_results['best_accuracy']
 
-#print(f"Best model: {best_model}")
-#print(f"Most important features: {most_important_features}")
-#print(f"Best model features: {best_model_features}")
-#print(f"Best accuracy: {best_accuracy}")
+print(f"Best model: {best_model}")
+print(f"Most important features: {most_important_features}")
+print(f"Best model features: {best_model_features}")
+print(f"Best accuracy: {best_accuracy}")
 
 # Print model weights and biases
 print_model_weights(results, 3)
+
+# Create a simple model with only the two most important features
+simple_results, simple_model = create_simple_model(df, sensitivity_results['most_important_features'])
+
+# Plot decision boundary with unscaled data and distinct colors
+plot_decision_boundary(df, sensitivity_results['most_important_features'], simple_model)
 
 # Show plots
 plt.show(block=False)
