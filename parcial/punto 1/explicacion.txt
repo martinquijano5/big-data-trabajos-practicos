@@ -1,0 +1,9 @@
+con lo que hicimos en exploracion usamos el scatterplot para hacer la aproximacion geometrica
+
+para la primer capa (aproximacion geometrica) son 8 neuronas (8 lineas en grafico aprox geo) tanh (la var de respuesta va de -1 a 1)
+
+segunda capa con 2/4 neuronas para redondear las lineas (relu tamb)
+
+capa de salida 3 neuronas (3 valores z)
+
+modelo de categorical_crossentropy para loss
