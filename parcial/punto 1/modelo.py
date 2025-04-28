@@ -18,6 +18,7 @@ from mpl_toolkits.mplot3d import Axes3D
 from sklearn.decomposition import PCA
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score
 from scipy import stats
+from datetime import datetime
 
 
 color_map = {-1: '#66b3ff', 0: '#ff9999', 1: '#99ff99'}
@@ -391,17 +392,42 @@ def plot_decision_boundary(results):
     
     return plt.gcf(), plt.gca()
 
+def save_model_weights(results):
+    """
+    Saves the weights and biases of the model to an Excel file.
+    Each layer's weights and biases are saved in separate sheets.
+    """
+    model = results['model']
+    weights_file_path = os.path.join(graficos_dir, 'model_weights.xlsx')
+
+    with pd.ExcelWriter(weights_file_path) as writer:
+        for i, layer in enumerate(model.layers):
+            layer_weights = layer.get_weights()  # Returns a list [weights, biases]
+
+            if layer_weights:  # Check if the layer has weights (e.g., Dense layers do)
+                # Save weights
+                weights_df = pd.DataFrame(layer_weights[0])
+                weights_df.to_excel(writer, sheet_name=f'Layer_{i+1}_Weights', index=False, header=False)
+
+                # Save biases if they exist
+                if len(layer_weights) > 1:
+                    biases_df = pd.DataFrame(layer_weights[1])
+                    biases_df.to_excel(writer, sheet_name=f'Layer_{i+1}_Biases', index=False, header=False)
+
 # Set up directories
 current_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Create timestamped directory name
+now = datetime.now()
+timestamp = now.strftime("%y-%m-%d-%H-%M-%S")
+folder_name = f"modelo-{timestamp}"
+
 # Create graficos directory if it doesn't exist
-graficos_dir = os.path.join(current_dir, 'graficos', 'modelo')
+graficos_dir = os.path.join(current_dir, 'graficos', folder_name)
 os.makedirs(graficos_dir, exist_ok=True)
 
 # Load data
-df = pd.read_excel('parcial/punto 1/Ej_1_A337_2025.xlsx')
-
-# Get class names for confusion matrix
-class_names = df['z'].unique()
+df = pd.read_excel('Ej_1_A337_2025.xlsx')
 
 # Create and train the model with all features
 results = train_complete_model(df)
@@ -413,9 +439,7 @@ plot_accuracy_epochs(results)
 plot_confusion_matrix(results)
 plot_feature_importance(results)
 plot_decision_boundary(results)
-
-
-
+save_model_weights(results)
 
 
 plt.show(block=False)
