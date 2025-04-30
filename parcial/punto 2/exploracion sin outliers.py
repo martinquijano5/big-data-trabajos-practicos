@@ -40,6 +40,41 @@ def float_to_int():
     for col in df.columns:
         df[col] = df[col].astype('int64')
 
+def sacar_outliers():
+    global df
+    print("\n--- Removing outliers using IQR method ---")
+    initial_shape = df.shape
+    print(f"Shape before removing outliers: {initial_shape}")
+
+    # Identify columns that are not binary (likely continuous or ordinal)
+    # It's generally better to pass this as an argument or calculate it reliably
+    # For now, recalculating based on current df state
+    other_cols = df.columns[df.nunique() > 2]
+    print(f"Columns being checked for outliers: {other_cols.tolist()}")
+
+    total_outliers_removed = 0
+
+    for col in other_cols:
+        shape_before_col = df.shape[0]
+        q1 = df[col].quantile(0.25)
+        q3 = df[col].quantile(0.75)
+        iqr = q3 - q1
+        low_lim = q1 - 1.5 * iqr
+        up_lim = q3 + 1.5 * iqr
+
+        # Filter the DataFrame
+        df = df[(df[col] >= low_lim) & (df[col] <= up_lim)]
+
+        shape_after_col = df.shape[0]
+        outliers_removed_col = shape_before_col - shape_after_col
+        if outliers_removed_col > 0:
+            print(f"Outliers removed for column '{col}': {outliers_removed_col}")
+            total_outliers_removed += outliers_removed_col
+
+    final_shape = df.shape
+    print(f"\nTotal outliers removed across all checked columns: {initial_shape[0] - final_shape[0]}")
+    print(f"New shape after removing outliers: {final_shape}")
+
 def prints():
     print("Head del dataset:")
     print(df.head())
@@ -664,7 +699,7 @@ def simple_scatterplot_combinations():
 
 # Create directory for saving graphs
 current_dir = os.path.dirname(os.path.abspath(__file__))
-graficos_dir = os.path.join(current_dir, 'graficos', 'exploracion')
+graficos_dir = os.path.join(current_dir, 'graficos', 'exploracion_sin_outliers')
 os.makedirs(graficos_dir, exist_ok=True)
 os.makedirs(os.path.join(graficos_dir, 'proporciones'), exist_ok=True)
 os.makedirs(os.path.join(graficos_dir, 'barchart_vs_diabetes'), exist_ok=True)
@@ -687,33 +722,35 @@ df = pd.read_csv('punto 2/diabetes_binary_health_indicators_BRFSS2015.csv')
 delete_duplicates()
 float_to_int()
 
-#prints()
+sacar_outliers()
+
+prints()
 #analyze_value_distribution()
 binary_cols = df.columns[df.nunique() == 2]
 print(binary_cols)
 
-#proportions(binary_cols)
-#barchart_vs_diabetes(binary_cols)
+proportions(binary_cols)
+barchart_vs_diabetes(binary_cols)
 
 other_cols = df.columns[df.nunique() > 2]
 print(other_cols)
 
 
-#histogramas(other_cols)
-#boxplots(other_cols)
-#boxplots_vs_diabetes(other_cols)
+histogramas(other_cols)
+boxplots(other_cols)
+boxplots_vs_diabetes(other_cols)
 
 
-#correlation_matrix()
-#correlation_vs_diabetes()
+correlation_matrix()
+correlation_vs_diabetes()
 
 
-#spearman_correlation()
-#spearman_correlation_vs_diabetes()
+spearman_correlation()
+spearman_correlation_vs_diabetes()
 
 
-#perform_t_tests_vs_diabetes(df, other_cols)
-#perform_chi2_tests_vs_diabetes(df, binary_cols)
+perform_t_tests_vs_diabetes(df, other_cols)
+perform_chi2_tests_vs_diabetes(df, binary_cols)
 
 
 orden_iv = calculate_and_plot_iv(df) # Call the IV function (no warning suppression needed)

@@ -1,0 +1,118 @@
+Diabetes_binary
+0 = no diabetes 1 = prediabetes 2 = diabetes
+
+
+HighBP
+0 = no high BP 1 = high BP
+
+
+HighChol
+0 = no high cholesterol 1 = high cholesterol
+
+
+CholCheck
+0 = no cholesterol check in 5 years 1 = yes cholesterol check in 5 years
+
+
+BMI
+Body Mass Index
+
+
+Smoker
+Have you smoked at least 100 cigarettes in your entire life? [Note: 5 packs = 100 cigarettes] 0 = no 1 = yes
+
+
+Stroke
+(Ever told) you had a stroke. 0 = no 1 = yes
+
+
+HeartDiseaseorAttack
+coronary heart disease (CHD) or myocardial infarction (MI) 0 = no 1 = yes
+
+
+PhysActivity
+physical activity in past 30 days - not including job 0 = no 1 = yes
+
+
+Fruits
+Consume Fruit 1 or more times per day 0 = no 1 = yes
+
+
+Veggies
+Consume Vegetables 1 or more times per day 0 = no 1 = yes
+
+
+HvyAlcoholConsump
+(adult men >=14 drinks per week and adult women>=7 drinks per week) 0 = no 1 = yes
+
+
+AnyHealthcare
+Have any kind of health care coverage, including health insurance, prepaid plans such as HMO, etc. 0 = no 1 = yes
+
+
+NoDocbcCost
+Was there a time in the past 12 months when you needed to see a doctor but could not because of cost? 0 = no 1 = yes
+
+
+GenHlth
+Would you say that in general your health is: 
+1 Excellent
+2 Very good
+3 Good
+4 Fair
+5 Poor
+
+
+MentHlth
+days of poor mental health scale 1-30 days
+
+
+PhysHlth
+physical illness or injury days in past 30 days scale 1-30
+
+
+DiffWalk
+Do you have serious difficulty walking or climbing stairs? 0 = no 1 = yes
+
+
+Sex
+0 = female 1 = male
+
+
+Age
+1 Age 18 to 24
+2 Age 25 to 29
+3 Age 30 to 34
+4 Age 35 to 39
+5 Age 40 to 44
+6 Age 45 to 49
+7 Age 50 to 54
+8 Age 55 to 59
+9 Age 60 to 64
+10 Age 65 to 69
+11 Age 70 to 74
+12 Age 75 to 79
+13 Age 80 or older
+
+
+
+
+Education
+1 Never attended school or only kindergarten
+2 Grades 1 through 8 (Elementary)
+3 Grades 9 through 11 (Some high school)
+4 Grade 12 or GED (High school graduate)
+5 College 1 year to 3 years (Some college or technical school)
+6 College 4 years or more (College graduate)
+
+
+
+Income
+1: < 10.000 
+2 < 15.0000 
+3 < 20.000 
+4 < 25.000 
+5 < 35.000 
+6 < 50.000 
+7 < 75.000 
+8 >= 75.000

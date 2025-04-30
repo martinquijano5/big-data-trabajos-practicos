@@ -1,0 +1,102 @@
+https://archive.ics.uci.edu/dataset/891/cdc+diabetes+health+indicators
+https://www.cdc.gov/brfss/annual_data/annual_2014.html
+https://www.cdc.gov/mmwr/volumes/66/wr/mm6643a2.htm
+https://www.kaggle.com/datasets/alexteboul/diabetes-health-indicators-dataset/data?select=diabetes_binary_health_indicators_BRFSS2015.csv
+
+
+
+leemos el DataFrame
+
+para probar codigos, probamos solo con 100 datos para hacer la ejecucion mas rapida
+
+delete_duplicates: 
+    este dataframe fue hecho en base a encuestas telefonicas. encontramos que hay 24.206 filas duplicadas. En si esto no es un problema, ya que de entre las 253.680 registros que hay, podria pasar que dos personas contesten exactamente lo mismo. El problema es que hay tantas variables con tantos valores distintos posibles que el numero de 24.206 nos parecia extremadamente grande. Si vemos el archivo de test_duplicados (hecho en base a la funcion analyze_value_distribution), vemos que dados la cantidad de valores unicos que puede tener cada variable y sus probabilidades, y dado que la muestra es de 253.680 registros, estadisticamente deberian haber 2295.99 registros iguales. 
+
+    Al ser 24.206 un numero significativamente mas grande que 2295, decidimos eliminar estos registros, lo que implica reducir un 9,5% la muestra.
+
+float_to_int:
+    vimos que el tipo de dato es float, pero al ver los datos son todos numeros enteros. Por lo tanto, decidimos pasar todos los tipos de dato a INT, ya que esto va a hacer que el tiempo de ejecucion del codigo sea mas rapido
+
+prints:
+    vemos el head, shape, info y describe del dataset. el describe se guarda como tabla
+
+analyze_value_distribution:
+    esta funcion fue creada para evaluar si era correcta la decision de borrar registros. EL objetivo es para cada variable mostrar todos los valores que tiene, su cantidad y su proporcion
+
+dividimos las variables en binary y other, ya que con las variables binarias hacemos un tipo de grafico y con las categoricas otros graficos
+
+proportions:
+    graficos de torta mostrando la proporcion de 0 y 1 para variables binarias
+
+barchart_vs_diabetes:
+    para cada columna binaria, hacemos un grafico de barras de la variable discriminando por si hay diabetes o no.
+
+histogramas:
+    para cada variable categorica, hacemos histogramas
+
+boxplots:
+    para cada variable categorica hacemos boxplots
+
+boxplots_vs_diabetes:
+    para cada variable catgorica hacemos boxplots discriminando por diabetes o no
+
+correlation_matrix:
+    genera grafico de correlacion con heatmap solo la parte de abajo, esto es correlacion de Pearson (la default)
+
+correlation_vs_diabetes:
+    grafica la correlacion de cada variable contra diabetes, nos indica significancia y como afecta (positiva o negativamente)
+
+spearman_correlation:
+    la correlacion de Pearson funciona mejor cuando las variables son continuas y estan distribuidas de forma normal, Al tener la mayoria de variables binarias y el resto categoricas (se podria llegar a considerar a bmi como continua), este tipo de correlacion no es la mejor.
+
+    la correlacion de Spearman es mejor cuando tenemos variables de orden (educacion, edad, income)
+
+spearman_correlation_vs_diabetes:
+    mismo grafico que la anterior pero con os datos de spearman
+
+si bien tenemos las dos correlaciones, los resultados son casi identicos. El objetivo era ver que variables eran mas siginficativas y si esas variables indicaban propencion al diabetes o no (signo del numero)
+
+perform_t_tests_vs_diabetes:
+    esto es test anova, lo que buscamos ver es si hay diferencia estadistica entre las medias de las variables en base a si son diabetes o no. Como diabetes_binary es binaria, en vez de anova es simplemente hacer un t-test para comparar la media de variables continuas en base a si son diabetes o no.
+
+    Primero dividimos en dos grupos, el grupo 0 que es sin diabetes y el grupo 1 que es con diabetes.
+
+    Luego, por cada variable, hacemos el t-test. Si el p-valor es menor al alpha (0.05), decimos que la diferencia es significativa    
+
+    finalmente, al tener ya los valores de todas las variables, hacemos la tabla
+
+perform_chi2_tests_vs_diabetes:
+    como t-test en variables binarias no tiene sentido, hacemos chi^2 test. Esto nos va a indicar si hay una diferencia estadisticamente significativa en variables binarias en base a su condicion de diabetes.
+
+    por cada variable, hacemos una contingency table, y en abse a eso hacemos el test de chi^2
+
+    cuando ya tenemos los resultados los ponemos en una tabla
+
+calculate_and_plot_iv:
+    https://www.listendata.com/2015/03/weight-of-evidence-woe-and-information.html#what_is_information_value
+
+    weight of evidence (woe) y information value (iv) son medidas que nos sirven para ver feature importance sin necesidad de hacer un modelo
+
+
+    para cada variable:
+        primero definimos los bins a usar (ya que hay binarias y categoricas)
+
+        despues calculamos el WoE. El WOE se calcula como el ln de cuando no sucede el evento sobre cuando sucede el evento. El WOE se saca para cada variable por la cantidad de valores unicos que tiene esa variable
+        
+        Ya con el WOE podemos sacar el IV, que es la sumatoria de (proporcion de no eventos menos la proporcion de que pase el evento) * woe de cada uno de los distintos valores de esa variable
+    
+    una vez que tenemos el iv de cada variable armamos la tabla
+
+    el tema del epsilon es que ln(0) no se puede hacer, entonces remplazamos los 0 por epsilon (0.00001) para que no rompa.
+
+pca_scatterplot:
+    primero escalamos los datos
+    despues hacemos pca con n_components=2
+
+    armamos un df con PC1, PC2 y diabetes_binary
+
+    nos guardamois el explained_variance_ratio y los componentes
+    con eso armamos la tabla que explica como afecta cada variable del df original a las variables del pca, y que tanta varianza estamos capturando con estas dos variables
+
+    una vez tenemos ese grafico, armamos el scatterplot. graficamos x=PC1, y=PC2, y coloreamos los puntos los valores del color de diabetes
+
