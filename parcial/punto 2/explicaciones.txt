@@ -17,6 +17,21 @@ delete_duplicates:
 float_to_int:
     vimos que el tipo de dato es float, pero al ver los datos son todos numeros enteros. Por lo tanto, decidimos pasar todos los tipos de dato a INT, ya que esto va a hacer que el tiempo de ejecucion del codigo sea mas rapido
 
+sacar_outliers:
+    en los boxplots viemos que hay outliers. por eso hacemos esta funcion
+    definimos como rango aceptable para el limite inferior al quantil1 - 1.5 * iqr
+    definimos como rango aceptable para el limite superior al quantil3 + 1.5 8 iqr
+
+    Columns being checked for outliers: ['BMI', 'GenHlth', 'MentHlth', 'PhysHlth', 'Age', 'Education', 'Income']
+    Outliers removed for column 'BMI': 5638
+    Outliers removed for column 'GenHlth': 11295
+    Outliers removed for column 'MentHlth': 29015
+    Outliers removed for column 'PhysHlth': 23676
+
+    antes de sacar habian 229474 registros, despues de sacar quedaron 159850
+
+    desp sacamos los outliers del df para hacer graficos y guardamos el csv para usarlo para los archivos de los modelos
+
 prints:
     vemos el head, shape, info y describe del dataset. el describe se guarda como tabla
 
@@ -100,3 +115,12 @@ pca_scatterplot:
 
     una vez tenemos ese grafico, armamos el scatterplot. graficamos x=PC1, y=PC2, y coloreamos los puntos los valores del color de diabetes
 
+
+
+transformaciones:
+    bmi agrupamos en base a criterios medicos:
+    (menos de 18.5), peso normal (18.5-24.9), sobrepeso (25-29.9), y obesidad (30 o más). La obesidad se clasifica en tres grados: I (30-34.9), II (35-39.9), y III (40 o más)
+
+    age, education, income, genHlth le metimos one hot encoding
+
+    mentHlth y PhysHlth los valores eran dias, entonces los agrupamos en 0, 1-5, 10-15, 15-20, 20-25, 25-30. De esta forma tenemos algo con la misma forma que one hot
