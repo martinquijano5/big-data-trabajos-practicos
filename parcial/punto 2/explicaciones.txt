@@ -119,8 +119,14 @@ pca_scatterplot:
 
 transformaciones:
     bmi agrupamos en base a criterios medicos:
-    (menos de 18.5), peso normal (18.5-24.9), sobrepeso (25-29.9), y obesidad (30 o más). La obesidad se clasifica en tres grados: I (30-34.9), II (35-39.9), y III (40 o más)
+    (menos de 18.5) flaco, peso normal (18.5-24.9), sobrepeso (25-29.9), y obesidad (30 o más). La obesidad se clasifica en tres grados: I (30-34.9), II (35-39.9), y III (40 o más)
 
     age, education, income, genHlth le metimos one hot encoding
 
     mentHlth y PhysHlth los valores eran dias, entonces los agrupamos en 0, 1-5, 10-15, 15-20, 20-25, 25-30. De esta forma tenemos algo con la misma forma que one hot
+
+
+Balanceo de muestra:
+    https://medicalxpress.com/news/2018-09-total-diabetes-percent-adults-.html
+
+    la muestra esta desbalanceada, pero representa la realidad de Diabetes en estados unidos de 2013 a 2016

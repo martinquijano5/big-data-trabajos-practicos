@@ -545,75 +545,6 @@ def calculate_and_plot_iv(df, target_col='Diabetes_binary', bins=10):
 
     return iv_df
 
-def pca_scatterplot(df, file_name):
-    # Separate features (X) and target (y)
-    X = df.drop('Diabetes_binary', axis=1)
-    y = df['Diabetes_binary']
-
-    # Scale the features
-    scaler = StandardScaler()
-    X_scaled = scaler.fit_transform(X)
-
-    # Apply PCA
-    pca = PCA(n_components=2)
-    X_pca = pca.fit_transform(X_scaled)
-
-    # Create a DataFrame with PCA results
-    pca_df = pd.DataFrame(data=X_pca, columns=['PC1', 'PC2'])
-    pca_df['Diabetes_binary'] = y.values # Add target variable for coloring
-
-    # --- Explained Variance and Components Table ---
-    explained_variance_ratio = pca.explained_variance_ratio_
-    components = pca.components_
-
-    # Create a DataFrame for the components table (loadings)
-    components_df = pd.DataFrame(components.T, columns=['PC1', 'PC2'], index=X.columns)
-
-    # Create a separate DataFrame for the explained variance row
-    variance_row = pd.DataFrame([explained_variance_ratio], columns=['PC1', 'PC2'], index=['Explained Variance Ratio'])
-
-    # Concatenate the loadings and the variance row
-    components_table_df = pd.concat([components_df, variance_row])
-
-
-    # Create the table plot
-    fig_table, ax_table = plt.subplots(figsize=(12, 8)) # Adjust size as needed
-    ax_table.axis('tight')
-    ax_table.axis('off')
-    # Use the new components_table_df which includes the variance row correctly
-    table = ax_table.table(cellText=components_table_df.round(3).values,
-                           colLabels=['PC1', 'PC2'], # Explicitly set column labels
-                           rowLabels=components_table_df.index,
-                           cellLoc = 'center',
-                           loc='center')
-    table.auto_set_font_size(False)
-    table.set_fontsize(10)
-    table.scale(1.2, 1.2)
-    plt.title(f'PCA Components Loadings and Explained Variance Ratio for {file_name}', pad=20)
-    plt.savefig(os.path.join(graficos_dir, 'pca_scatterplot', f'{file_name}_pca_components_table.png'), bbox_inches='tight')
-
-    # --- Scatter Plot ---
-    plt.figure(figsize=(10, 8))
-    scatter = sns.scatterplot(x='PC1', y='PC2', hue='Diabetes_binary', data=pca_df,
-                              palette={0: 'blue', 1: 'red'}, alpha=0.7)
-    plt.title(f'PCA Scatter Plot (PC1 vs PC2) Colored by Diabetes Status for {file_name}')
-    plt.xlabel('Principal Component 1')
-    plt.ylabel('Principal Component 2')
-    handles, labels = scatter.get_legend_handles_labels()
-    scatter.legend(handles=handles, labels=['Non-Diabetic', 'Diabetic'], title='Diabetes Status')
-    plt.grid(True)
-    plt.savefig(os.path.join(graficos_dir, 'pca_scatterplot', f'{file_name}_pca_scatterplot.png'))
-
-def pca_top_x(orden_iv, cant_features):
-    # Get the top x features based on IV
-    top_x_features = orden_iv['Feature'].head(cant_features).tolist()
-
-    # Create a new DataFrame including the top 6 features AND the target variable
-    features_to_include = top_x_features + ['Diabetes_binary']
-    top_x_df = df[features_to_include].copy() # Use .copy() to avoid SettingWithCopyWarning
-
-    # Now call pca_scatterplot with the correctly formed DataFrame
-    pca_scatterplot(top_x_df, f'top_{cant_features}_model')
 
 def simple_scatterplot(var1, var2):
     """
@@ -675,7 +606,6 @@ os.makedirs(os.path.join(graficos_dir, 'correlation_matrix'), exist_ok=True)
 os.makedirs(os.path.join(graficos_dir, 't_tests_vs_diabetes'), exist_ok=True)
 os.makedirs(os.path.join(graficos_dir, 'chi2_tests_vs_diabetes'), exist_ok=True)
 os.makedirs(os.path.join(graficos_dir, 'woe_iv'), exist_ok=True)
-os.makedirs(os.path.join(graficos_dir, 'pca_scatterplot'), exist_ok=True)
 os.makedirs(os.path.join(graficos_dir, 'simple_scatterplots'), exist_ok=True)
 
 
