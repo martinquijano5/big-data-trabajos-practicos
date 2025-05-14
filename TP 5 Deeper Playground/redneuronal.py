@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import KFold
 from sklearn.preprocessing import StandardScaler
 import os
 from tensorflow.keras.models import Sequential
@@ -9,6 +9,55 @@ from tensorflow.keras.optimizers import Adam
 import matplotlib.pyplot as plt
 from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay
 import seaborn as sns
+from tensorflow.keras.regularizers import l2
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
+
+# Función para crear el modelo de red neuronal de dos capas ocultas
+def create_model_8():
+    model = Sequential([
+        # Primera capa oculta con regularización L2 y 8 neuronas
+        Dense(8, activation='relu', kernel_regularizer=l2(0.0), input_shape=(2,)),
+        # Segunda capa oculta con regularización L2 y 8 neuronas
+        Dense(8, activation='relu', kernel_regularizer=l2(0.0)),
+        # Capa de salida con 1 neurona y activación sigmoid
+        Dense(1, activation='sigmoid')
+    ])
+    
+    # Compilar el modelo con learning rate fijo
+    optimizer = Adam(learning_rate=0.03)
+    
+    model.compile(
+        optimizer=optimizer,
+        loss='binary_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    return model
+
+# Función para crear el modelo de red neuronal de 7 capas ocultas
+def create_model_1():
+    model = Sequential([
+        # Primera capa oculta con 10 neuronas y activación ReLU
+        Dense(3, activation='relu', input_shape=(2,)),
+        # Primera capa oculta con 10 neuronas y activación ReLU
+        Dense(3, activation='relu', input_shape=(2,)),
+
+
+        Dense(1, activation='sigmoid')
+    ])
+    
+    # Compilar el modelo con learning rate fijo
+    optimizer = Adam(learning_rate=0.03)
+
+    # Compilar el modelo
+    model.compile(
+        optimizer=optimizer,
+        loss='binary_crossentropy',
+        metrics=['accuracy']
+    )
+    
+    return model
+
 
 # Obtener la ruta del directorio actual
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -28,87 +77,145 @@ df1['Type'] = df1['Type'].map({'NARANJA': 0, 'AZUL': 1})
 df8['Type'] = df8['Type'].map({'NARANJA': 0, 'AZUL': 1})
 
 # Normalizar las características usando StandardScaler
-scaler = StandardScaler()
-X1 = scaler.fit_transform(df1[['X1', 'X2']])
-X8 = scaler.fit_transform(df8[['X1', 'X2']])
+scaler1 = StandardScaler()
+scaler8 = StandardScaler()
+X1 = scaler1.fit_transform(df1[['X1', 'X2']])
+X8 = scaler8.fit_transform(df8[['X1', 'X2']])
 
 # Obtener las etiquetas
 y1 = df1['Type'].values
 y8 = df8['Type'].values
 
-# Dividir los datos en conjuntos de entrenamiento y prueba
-# Dataset 1
-X1_train, X1_test, y1_train, y1_test = train_test_split(X1, y1, test_size=0.2, random_state=42)
-# Dataset 8
-X8_train, X8_test, y8_train, y8_test = train_test_split(X8, y8, test_size=0.2, random_state=42)
+# Configuración de K-Fold Cross Validation
+k_folds = 5
+kf = KFold(n_splits=k_folds, shuffle=True, random_state=42)
 
 # Imprimir información sobre los conjuntos de datos
 print("\nInformación de los conjuntos de datos:")
 print("\nDataset 1:")
-print(f"Conjunto de entrenamiento: {X1_train.shape[0]} muestras")
-print(f"Conjunto de prueba: {X1_test.shape[0]} muestras")
-print(f"Proporción de clases en entrenamiento - NARANJA: {np.sum(y1_train == 0)}, AZUL: {np.sum(y1_train == 1)}")
-print(f"Proporción de clases en prueba - NARANJA: {np.sum(y1_test == 0)}, AZUL: {np.sum(y1_test == 1)}")
+print(f"Total de muestras: {X1.shape[0]}")
+print(f"Proporción de clases - NARANJA: {np.sum(y1 == 0)}, AZUL: {np.sum(y1 == 1)}")
 
 print("\nDataset 8:")
-print(f"Conjunto de entrenamiento: {X8_train.shape[0]} muestras")
-print(f"Conjunto de prueba: {X8_test.shape[0]} muestras")
-print(f"Proporción de clases en entrenamiento - NARANJA: {np.sum(y8_train == 0)}, AZUL: {np.sum(y8_train == 1)}")
-print(f"Proporción de clases en prueba - NARANJA: {np.sum(y8_test == 0)}, AZUL: {np.sum(y8_test == 1)}")
+print(f"Total de muestras: {X8.shape[0]}")
+print(f"Proporción de clases - NARANJA: {np.sum(y8 == 0)}, AZUL: {np.sum(y8 == 1)}")
+print(f"\nNúmero de folds: {k_folds}")
 
-# Función para crear el modelo de red neuronal
-def create_model():
-    model = Sequential([
-        # Primera capa oculta con 10 neuronas y activación ReLU
-        Dense(10, activation='relu', input_shape=(2,)),
-        # Segunda capa oculta con 10 neuronas y activación ReLU
-        Dense(10, activation='relu'),
-        # Capa de salida con 1 neurona y activación sigmoid
-        Dense(1, activation='sigmoid')
-    ])
-    
-    # Compilar el modelo
-    model.compile(
-        optimizer=Adam(),
-        loss='binary_crossentropy',
-        metrics=['accuracy']
-    )
-    
-    return model
 
 # Crear y mostrar el resumen del modelo
-model = create_model()
 print("\nResumen del modelo de red neuronal:")
-model.summary()
+create_model_8().summary()
 
-# Entrenar el modelo para el dataset 1
-print("\nEntrenando modelo para Dataset 1...")
-history1 = model.fit(
-    X1_train, y1_train,
+# Listas para almacenar resultados del Dataset 1
+fold_accuracy_1 = []
+fold_loss_1 = []
+all_histories_1 = []
+y_true_all_1 = []
+y_pred_all_1 = []
+
+# Realizar k-fold cross validation para el Dataset 1
+print("\nRealizando K-Fold Cross Validation para Dataset 1...")
+for fold, (train_idx, val_idx) in enumerate(kf.split(X1)):
+    print(f"\nEntrenando fold {fold+1}/{k_folds}")
+    
+    # Dividir datos en conjuntos de entrenamiento y validación
+    X_train, X_val = X1[train_idx], X1[val_idx]
+    y_train, y_val = y1[train_idx], y1[val_idx]
+    
+    # Crear y entrenar el modelo
+    model = create_model_1()
+    history = model.fit(
+        X_train, y_train,
+        epochs=300,
+        batch_size=10,
+        validation_data=(X_val, y_val),
+        verbose=1
+    )
+    all_histories_1.append(history)
+    
+    # Evaluar el modelo
+    val_loss, val_acc = model.evaluate(X_val, y_val, verbose=0)
+    fold_loss_1.append(val_loss)
+    fold_accuracy_1.append(val_acc)
+    
+    # Guardar predicciones para la matriz de confusión
+    y_pred = (model.predict(X_val) > 0.5).astype(int)
+    y_true_all_1.extend(y_val)
+    y_pred_all_1.extend(y_pred)
+    
+    print(f"Fold {fold+1} - Loss: {val_loss:.4f}, Accuracy: {val_acc:.4f}")
+
+# Mostrar resultados de la validación cruzada para Dataset 1
+print("\nResultados de Cross Validation para Dataset 1:")
+print(f"Precisión promedio: {np.mean(fold_accuracy_1):.4f} ± {np.std(fold_accuracy_1):.4f}")
+print(f"Loss promedio: {np.mean(fold_loss_1):.4f} ± {np.std(fold_loss_1):.4f}")
+
+# Listas para almacenar resultados del Dataset 8
+fold_accuracy_8 = []
+fold_loss_8 = []
+all_histories_8 = []
+y_true_all_8 = []
+y_pred_all_8 = []
+
+# Realizar k-fold cross validation para el Dataset 8
+print("\nRealizando K-Fold Cross Validation para Dataset 8...")
+for fold, (train_idx, val_idx) in enumerate(kf.split(X8)):
+    print(f"\nEntrenando fold {fold+1}/{k_folds}")
+    
+    # Dividir datos en conjuntos de entrenamiento y validación
+    X_train, X_val = X8[train_idx], X8[val_idx]
+    y_train, y_val = y8[train_idx], y8[val_idx]
+    
+    # Crear y entrenar el modelo
+    model = create_model_8()
+    history = model.fit(
+        X_train, y_train,
+        epochs=100,
+        batch_size=30,
+        validation_data=(X_val, y_val),
+    )
+    all_histories_8.append(history)
+    
+    # Evaluar el modelo
+    val_loss, val_acc = model.evaluate(X_val, y_val, verbose=0)
+    fold_loss_8.append(val_loss)
+    fold_accuracy_8.append(val_acc)
+    
+    # Guardar predicciones para la matriz de confusión
+    y_pred = (model.predict(X_val) > 0.5).astype(int)
+    y_true_all_8.extend(y_val)
+    y_pred_all_8.extend(y_pred)
+    
+    print(f"Fold {fold+1} - Loss: {val_loss:.4f}, Accuracy: {val_acc:.4f}")
+
+# Mostrar resultados de la validación cruzada para Dataset 8
+print("\nResultados de Cross Validation para Dataset 8:")
+print(f"Precisión promedio: {np.mean(fold_accuracy_8):.4f} ± {np.std(fold_accuracy_8):.4f}")
+print(f"Loss promedio: {np.mean(fold_loss_8):.4f} ± {np.std(fold_loss_8):.4f}")
+
+# Comparación directa entre ambos datasets
+print("\nComparación de resultados:")
+print(f"Dataset 1 - Precisión: {np.mean(fold_accuracy_1):.4f} ± {np.std(fold_accuracy_1):.4f}")
+print(f"Dataset 8 - Precisión: {np.mean(fold_accuracy_8):.4f} ± {np.std(fold_accuracy_8):.4f}")
+
+# Construir modelos finales con todos los datos
+print("\nEntrenando modelos finales con todos los datos...")
+
+# Modelo final para Dataset 1
+final_model_1 = create_model_1()
+final_history_1 = final_model_1.fit(
+    X1, y1,
     epochs=100,
     batch_size=32,
-    validation_split=0.2,
-    verbose=1
 )
 
-# Evaluar el modelo en el conjunto de prueba del dataset 1
-test_loss1, test_accuracy1 = model.evaluate(X1_test, y1_test)
-print(f"\nPrecisión en el conjunto de prueba del Dataset 1: {test_accuracy1:.4f}")
-
-# Crear y entrenar un nuevo modelo para el dataset 8
-model8 = create_model()
-print("\nEntrenando modelo para Dataset 8...")
-history8 = model8.fit(
-    X8_train, y8_train,
+# Modelo final para Dataset 8
+final_model_8 = create_model_8()
+final_history_8 = final_model_8.fit(
+    X8, y8,
     epochs=100,
     batch_size=32,
-    validation_split=0.2,
-    verbose=1
 )
-
-# Evaluar el modelo en el conjunto de prueba del dataset 8
-test_loss8, test_accuracy8 = model8.evaluate(X8_test, y8_test)
-print(f"\nPrecisión en el conjunto de prueba del Dataset 8: {test_accuracy8:.4f}")
 
 # Función para crear la superficie de decisión
 def plot_decision_boundary(model, X, y, title):
@@ -131,28 +238,46 @@ def plot_decision_boundary(model, X, y, title):
     plt.xlabel('X1')
     plt.ylabel('X2')
 
-# Visualizar el historial de entrenamiento
-plt.figure(figsize=(15, 5))
+# Visualizar el historial de entrenamiento de los folds
+plt.figure(figsize=(15, 7))
 
-# Gráfico de pérdida
+# Gráfico de pérdida promedio por época
 plt.subplot(1, 2, 1)
-plt.plot(history1.history['loss'], label='Entrenamiento Dataset 1')
-plt.plot(history1.history['val_loss'], label='Validación Dataset 1')
-plt.plot(history8.history['loss'], label='Entrenamiento Dataset 8')
-plt.plot(history8.history['val_loss'], label='Validación Dataset 8')
-plt.title('Pérdida durante el entrenamiento')
+
+# Dataset 1 - Líneas de promedio
+mean_train_loss_1 = np.mean([h.history['loss'] for h in all_histories_1], axis=0)
+mean_val_loss_1 = np.mean([h.history['val_loss'] for h in all_histories_1], axis=0)
+plt.plot(mean_train_loss_1, label='Train D1', color='blue', linewidth=2)
+plt.plot(mean_val_loss_1, label='Val D1', color='lightblue', linewidth=2)
+
+# Dataset 8 - Líneas de promedio
+mean_train_loss_8 = np.mean([h.history['loss'] for h in all_histories_8], axis=0)
+mean_val_loss_8 = np.mean([h.history['val_loss'] for h in all_histories_8], axis=0)
+plt.plot(mean_train_loss_8, label='Train D8', color='red', linewidth=2)
+plt.plot(mean_val_loss_8, label='Val D8', color='lightcoral', linewidth=2)
+
+plt.title('Pérdida durante el entrenamiento (K-Fold)')
 plt.xlabel('Época')
 plt.ylabel('Pérdida')
 plt.legend()
 plt.grid(True)
 
-# Gráfico de precisión
+# Gráfico de precisión promedio por época
 plt.subplot(1, 2, 2)
-plt.plot(history1.history['accuracy'], label='Entrenamiento Dataset 1')
-plt.plot(history1.history['val_accuracy'], label='Validación Dataset 1')
-plt.plot(history8.history['accuracy'], label='Entrenamiento Dataset 8')
-plt.plot(history8.history['val_accuracy'], label='Validación Dataset 8')
-plt.title('Precisión durante el entrenamiento')
+
+# Dataset 1 - Líneas de promedio
+mean_train_acc_1 = np.mean([h.history['accuracy'] for h in all_histories_1], axis=0)
+mean_val_acc_1 = np.mean([h.history['val_accuracy'] for h in all_histories_1], axis=0)
+plt.plot(mean_train_acc_1, label='Train D1', color='blue', linewidth=2)
+plt.plot(mean_val_acc_1, label='Val D1', color='lightblue', linewidth=2)
+
+# Dataset 8 - Líneas de promedio
+mean_train_acc_8 = np.mean([h.history['accuracy'] for h in all_histories_8], axis=0)
+mean_val_acc_8 = np.mean([h.history['val_accuracy'] for h in all_histories_8], axis=0)
+plt.plot(mean_train_acc_8, label='Train D8', color='red', linewidth=2)
+plt.plot(mean_val_acc_8, label='Val D8', color='lightcoral', linewidth=2)
+
+plt.title('Precisión durante el entrenamiento (K-Fold)')
 plt.xlabel('Época')
 plt.ylabel('Precisión')
 plt.legend()
@@ -160,32 +285,56 @@ plt.grid(True)
 
 plt.tight_layout()
 
-# Matrices de confusión
-plt.figure(figsize=(15, 5))
+# Matrices de confusión para los modelos finales
+plt.figure(figsize=(15, 6))
 
-# Dataset 1
+# Dataset 1 - usando el modelo final
+y_pred_final_1 = (final_model_1.predict(X1) > 0.5).astype(int)
+cm1_final = confusion_matrix(y1, y_pred_final_1)
 plt.subplot(1, 2, 1)
-y1_pred = (model.predict(X1_test) > 0.5).astype(int)
-cm1 = confusion_matrix(y1_test, y1_pred)
-sns.heatmap(cm1, annot=True, fmt='d', cmap='Blues')
-plt.title('Matriz de Confusión - Dataset 1')
+sns.heatmap(cm1_final, annot=True, fmt='d', cmap='Blues')
+plt.title('Matriz de Confusión Final - Dataset 1')
 plt.xlabel('Predicción')
 plt.ylabel('Valor Real')
 
-# Dataset 8
+# Dataset 8 - usando el modelo final
+y_pred_final_8 = (final_model_8.predict(X8) > 0.5).astype(int)
+cm8_final = confusion_matrix(y8, y_pred_final_8)
 plt.subplot(1, 2, 2)
-y8_pred = (model8.predict(X8_test) > 0.5).astype(int)
-cm8 = confusion_matrix(y8_test, y8_pred)
-sns.heatmap(cm8, annot=True, fmt='d', cmap='Blues')
-plt.title('Matriz de Confusión - Dataset 8')
+sns.heatmap(cm8_final, annot=True, fmt='d', cmap='Blues')
+plt.title('Matriz de Confusión Final - Dataset 8')
 plt.xlabel('Predicción')
 plt.ylabel('Valor Real')
 
 plt.tight_layout()
 
-# Superficies de decisión
-plot_decision_boundary(model, X1, y1, 'Superficie de Decisión - Dataset 1')
-plot_decision_boundary(model8, X8, y8, 'Superficie de Decisión - Dataset 8')
+# Superficies de decisión con los modelos finales
+plot_decision_boundary(final_model_1, X1, y1, 'Superficie de Decisión - Dataset 1')
+plot_decision_boundary(final_model_8, X8, y8, 'Superficie de Decisión - Dataset 8')
+
+# Calcular y mostrar métricas adicionales para los modelos finales
+accuracy_1 = accuracy_score(y1, y_pred_final_1)
+precision_1 = precision_score(y1, y_pred_final_1)
+recall_1 = recall_score(y1, y_pred_final_1)
+f1_1 = f1_score(y1, y_pred_final_1)
+
+print("\nMétricas para el modelo final - Dataset 1:")
+print(f"Accuracy: {accuracy_1:.4f}")
+print(f"Precision: {precision_1:.4f}")
+print(f"Recall: {recall_1:.4f}")
+print(f"F1 Score: {f1_1:.4f}")
+
+# Métricas para Dataset 8
+accuracy_8 = accuracy_score(y8, y_pred_final_8)
+precision_8 = precision_score(y8, y_pred_final_8)
+recall_8 = recall_score(y8, y_pred_final_8)
+f1_8 = f1_score(y8, y_pred_final_8)
+
+print("\nMétricas para el modelo final - Dataset 8:")
+print(f"Accuracy: {accuracy_8:.4f}")
+print(f"Precision: {precision_8:.4f}")
+print(f"Recall: {recall_8:.4f}")
+print(f"F1 Score: {f1_8:.4f}")
 
 plt.show(block=False)
 input("\nPresiona Enter para finalizar el programa y cerrar todas las figuras...")

@@ -1,3 +1,6 @@
+#directorio de graficos
+sommelier secuenciales/graficos/
+
 # Virtual Environment
 .venv/
 venv/

@@ -1,0 +1,7 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+Dont delete comments, create or change them if necessary, but dont delete comments I have that still make sense.
+When creating new functionalities, try to make them on a separate function.
