@@ -1,0 +1,114 @@
+agarramos cada df por separado, le ponemos la propiedad de type (0 rojo, 1 blanco)
+pasamos free sulfur dioxide y total sulfur dioxide a int, ya que en los csv son numeros enteros pero los reconoce como float
+
+vamos a plantear el caso como: tengo un vino del que no se nada, primero hacemos lo mas facil, que es calcular el tipo del vino. Una vez que tenemos el tipo de vino, evaluamos su calidad. Por lo tanto, vamos a tener que hacer un modelo que prediga color, y despues en base a eso usamos el modelo de calidad para vino rojo o el modelo de calidad para vino blanco. Se podria hacer un modelo que aproxime calidad sin saber el tipo, pero al ser el tipo algo tan facilmente calculable, es mejor hacer cada cosa por separado.
+
+primero armo el archivo para hacer graficos de exploracion
+    proportions:
+        muestra desbalanceada: 75.4% son blancos
+    boxplots:
+        al ver los boxplots, vemos que hay demasiada dispersion en algunas variables. Esto puede deberse a que el vino rojo y el vino blanco tienen distintas propiedades, y al no estar balanceada la muestra, se puede considerar outlier un dato por pertenecer a vino rojo. Por eso hacemos boxplots_vs_type
+    boxplots_vs_type:
+        en chlorides vemos mucha dispersion dentro de ambos tipos de vinos
+        en residual sugar vemos valores mucho mas altos para vino blanco
+
+    si bien vemos que hay mucho outlier en general, no saco outliers por iqr porque confio en el sistema de medicion
+
+    histogramas_vs_type:
+        vemos que por lo general, vino blanco tiene valores mas altos
+
+    correlation:
+        vemos que las que mas correlacion negativa tienen son density vs alcohol, type vs volatile acidity, chlorides vs type, sulphates vs type
+        vemos que las que mas correlacion positiva tienen son total sulfur dioxide vs type, total sulfur dioxide vs free sulfur dioxide, density vs residual sugar
+
+    correlation vs quality:
+        lo interesante de estos dos graficos es comparar como cambian de importancia las variables para determinar la calidad del vino en base al tipo de vino
+        
+        para vino blanco:
+            alcohol y density, chlorides, volatile acidity son las mas importantes
+        
+        para vino rojo:
+            alcohol, volatile acidity, sulphates, citric acid son las mas importantes            
+
+    correlation vs type:
+        vemos que variables son las mas importanes para definir tipo
+        total sulfur dioxide y volatile acidity
+
+    information value:
+        la idea de estos graficos es calcular de otra forma la importancia de las variables, mas alla de la correlacion
+
+        iv vs quality:
+            para vino blanco:
+                alcohol, density, chlorides, volatile acidity
+            
+            para vino rojo:
+                volatile acidity, total sulfur dioxide, alcohol, sulphates, citric acid
+
+        iv vs type:
+            total sulfur dioxide, chlorides, volatile acidity, residual sugar
+        
+        en lineas generales, las variables mas importantes segun iv son las mismas que en correlacion
+
+
+modelos color
+    como vemos en el information_value_combined_type.png, las variables mas importantes son total sulfur dioxide y chlorides
+
+    por aproximacion geometrica (y tambien viendo wine foto) yo diria que hay que usar 2 o 3 neuronas
+
+    tomando entonces unicamente total sulfur dioxide y chlorides como variables, dentro de la funcion neural_network_neurons_sensibility_analysis hago un for que va de 0 a 10. El objetivo es primero hacer una regresion logistica (una red neuronal sin capas ocultas es lo mimso que una regresion logistica), y luego ya ir haciendo las redes neuronales cambiando la cantidad de neuronas.
+
+    El objetivo de hacer eso fue evaluar como cambia el grafico de frontera de decision a medida que ibamos cambiando la cantidad de neuronas. Lo que encontramos fue que las lineas que dibuja el modelo en el grafico de frontera de decision son distintos a las lineas que pensamos nosotros a mano en un primer momento
+
+    si bien tenemos 1230 modelos, el optimo para usar dado su accuracy y complejidad es el modelo intermedio de una capa oculta y dos neuronas, que tiene un accuracy de 0.9843
+
+generate_color_csv:
+    para hacer el modelo de calidad, en vez de usar el dato real de color, quiero usar el dato de color que predice mi modelo de color. Este archivo entonces va a generar nuevamente un csv de wine-red y wine-white pero agrgando la columna predicted_type poniendo la prediccion del modelo.
+
+
+
+modelo calidad:
+    las funciones son casi iguales a las de modelo_color
+
+    para medir calidad, vamos a hacer modelos que sea general (que sirva para ambos tipos de vino), otro modelo pensando en que solo se va a aplica para vino rojo, y otro modelo que se va a aplicar para vino blanco. Para esos 3 modelos, hacemos modelos simples de 2 variables, modelos intermedios con 4 o 5 variables y modelos con todas las variables.
+
+    Lo que cambia para cada modelo es las variables que elegimos (en simple e intermedio), pero tambien el dataset que usamos para entrenar a esos modelos. Para elegir las variables usamos iv_combined_quality, iv_red_quality, y iv_white_quality que mostramos antes. 
+
+    Como el archivo tardaba tanto en ejecutar, tiraba error pq mi pc se quedaba sin ram. Por eso dividi esto en tres archivos (modelo_calidad_general, modelo_calidad_rojo y modelo_calidad_blanco). En definitiva son lo mismo que modelo_calidad pero dividido en tres archivos.
+
+    el mejor modelo general fue
+    el mejor modelo de vino rojo fue
+    el mejor modelo de vino blanco fue
+
+
+functional_api:
+    esto que yo arme hasta ahora es una forma manual de resoler un problema donde queremos predecir mas de una variable. Keras tiene su functional_api que resuelve esto mediante redes funcionales. Las redes funcionales son modelos mas flexibles y que permiten crear redes mas complejas, peor requieren ma atencion.
+
+    hacemos auto encoding (archivo de auto encoding). Esto es como i
+
+    Aca directamente hicimos modelos de dos capas, haciendo un for iterando desde 3 neuronas a 10 neuronas en cada capa. 
+    Y en vez de hacer un modelo intermedio y un modelo completo, metimos auto encoder
+
+
+comparar modelos:
+    elegir un mejor modelo general, un mejor modelo para vino rojo y un mejor modelo para vino blanco
+    despues, comparar accuracy de modelo general contra usar el modelo de vino rojo o blanco en base a la calidad percibida
+   
+
+
+Conclusion:
+    a la hora de predecir el color, con un modelo intermedio simple pudimos obtener un accuracy de 0.9843
+
+    a la hora de predecir la calidad en base a la prediccion del modelo de color:
+        como minimo, vamos a exigir la proporcion de calidad que mas hay, es decir, como hay XXX proporcion de vinos de calidad XXX, vamos a exigir eso como minimo
+
+        el modelo general intermedio L1_2 dio un accuracy de 0.5264, mientras que el modelo L1_3_L2_3 dio un accuracy de 0.5313. El modelo completo L1_10 da 0.5390 de accuracy, y el modelo L1_4_L2_8 da 0.5406
+
+        el modelo de vino rojo intermedio L1_4 dio un accuracy de 0.5941, y el modelo de vino rojo intermedio L1_2_L2_3 dio un accuracy de 0.5916. El modelo completo de vino rojo L1_14 dio un accuracy de 0.5997 y el modelo de vino rojo completo L1_10_L2_15 dio un accuracy de 0.6023.
+
+        el modelo de vino blanco intermedio L1_8 dio un accuracy de 0.5333, y el modelo de vino blanco intermedio L1_13_L2_20 dio un accuracy de 0.5406. El modelo completo de vino blanco L1_14 dio un accuracy de 0.5347 y el modelo de vino blanco completo L1_5_L2_X9 dio un accuracy de 0.5439.
+
+
+        Si promediamos la proporcion de cada tipo de vino con su accuracy, sacamos una accuracy ponderada que da 0.5482. Es decir, el metodo de predecir el color y en base a eso usar el modelo correcto dio un accuracy de 0.5482. Esto implica una mejor sobre el modelo general
+
+    
+    Por otro lado, el modelo de redes secuenciales para color tuvo un accuracy de 0.995 y para definir calidad tuvo un accuracy de 0.578

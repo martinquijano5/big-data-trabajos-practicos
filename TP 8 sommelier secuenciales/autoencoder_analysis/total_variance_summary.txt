@@ -1,0 +1,5 @@
+Total Variance Summary:
+-------------------------
+Total variance of original scaled data: 11.0000
+Total variance of reconstructed data: 8.6434
+Percentage of total variance retained in reconstruction: 78.58%
