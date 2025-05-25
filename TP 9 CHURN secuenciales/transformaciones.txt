@@ -1,0 +1,41 @@
+1: status-cuenta -->  A14=2, A11=1, A12=3, A13=4
+
+2: duracion-meses --> valor <=10 = 1, valor <=20 = 2, valor <=30 = 3, valor <=40 = 4, valor > 40 =5
+
+3: credit-history -->  a30=1, a31=2, a32=3, a33=4, a34=5
+
+4: credit-purpose --> a49=1, a48=2, a47=3, a46=4, a45=5, a44=6, a43=7, a42=8, a41=9, a40=10, a10=11
+
+5: credit-amount --> no transformar
+
+6: saving-account-amount --> a65=1, a61=2, a62=3, a63=2, a64=1
+
+7: antiguedad-trabajo --> 75=1, a74=2, a73=3, a72=4, a71=5
+
+8: tasa-interes --> no transformar
+
+9: estado-civil --> a91=1, a92=2, a93=3, a94=4, a95=5
+
+10: garante --> (hacer transformacion a101=3, a102=2, a103=1)
+
+11: 
+
+12: propiedades --> (hacer transformacion a124=4, a123=3, a122=2, a121=1)
+
+13: edad --> categorizar en menor de 30=1 y mayor de 30=1
+
+14: 
+
+15: alojamiento --> si vive con los papas, alquila o es propietario (hacer transformacion a153=3, a151=2, a153=1)
+
+16: cantidad-creditos --> cantidad de creditos que tiene en el banco (no transformar)
+
+17: trabajo --> (hacer transformacion a171=4, a172=3, a173=2, a174=1)
+
+18: cantidad-manutencion --> cantidad personas a las que mantiene (no transformar)
+
+19: telefono --> (transformar a191=1, a192=0)
+
+20: trabajo-domestico --> (transformar a201=0, a202=1)
+
+Rechazo: pasar valor 1 a 0 y 2 a 1

@@ -1,0 +1,14 @@
+Weights of Evidence (WOE):
+    It's a measure of how well a specific group (or "bin") of a variable separates "Good" outcomes from "Bad" outcomes.
+    Formula for a bin: WOE = ln ( (Percentage of Good in bin) / (Percentage of Bad in bin) )
+    A positive WOE means the bin has a higher proportion of "Good" outcomes than "Bad" outcomes compared to the overall distribution.
+    A negative WOE means the bin has a higher proportion of "Bad" outcomes.
+    WOE near zero means the bin doesn't distinguish well between Good and Bad.
+    It helps in understanding the relationship between a variable and the outcome (e.g., is it linear, U-shaped?).
+    It transforms variables into a continuous scale that can be more amenable to models like logistic regression.
+
+Information Value (IV):
+    It's a measure of the overall predictive power of a single variable across all its bins.
+    Formula for a variable: IV = Σ [ (Percentage of Good in bin_i - Percentage of Bad in bin_i) * WOE_bin_i ] (sum over all bins i)
+    It helps in feature selection by quantifying how well a variable, as a whole, distinguishes Good from Bad.
+
