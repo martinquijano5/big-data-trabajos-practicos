@@ -42,7 +42,7 @@ def apply_transformations_complete(df):
         
         13: {
             "new_name": "edad",
-            "transform_func": lambda x: 1 if pd.notna(x) and x < 30 else 1
+            "transform_func": lambda x: 1 if pd.notna(x) and x < 30 else 0
         },
         
         14: {"new_name": "14", "mapping": {"A141": 141, "A142": 142, "A143": 143}},
