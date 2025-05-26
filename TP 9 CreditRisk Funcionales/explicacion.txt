@@ -1,0 +1,32 @@
+Weights of Evidence (WOE):
+    It's a measure of how well a specific group (or "bin") of a variable separates "Good" outcomes from "Bad" outcomes.
+    Formula for a bin: WOE = ln ( (Percentage of Good in bin) / (Percentage of Bad in bin) )
+    A positive WOE means the bin has a higher proportion of "Good" outcomes than "Bad" outcomes compared to the overall distribution.
+    A negative WOE means the bin has a higher proportion of "Bad" outcomes.
+    WOE near zero means the bin doesn't distinguish well between Good and Bad.
+    It helps in understanding the relationship between a variable and the outcome (e.g., is it linear, U-shaped?).
+    It transforms variables into a continuous scale that can be more amenable to models like logistic regression.
+
+Information Value (IV):
+    It's a measure of the overall predictive power of a single variable across all its bins.
+    Formula for a variable: IV = Σ [ (Percentage of Good in bin_i - Percentage of Bad in bin_i) * WOE_bin_i ] (sum over all bins i)
+    It helps in feature selection by quantifying how well a variable, as a whole, distinguishes Good from Bad.
+
+keras tuner:
+    va iterando ciertos valores hasta encontrar el punto optimo, y ahi entrena el mejor modelo.
+
+    Units in Dense layers: For dense_ohe_1, dense_numerical_1, and the three combined_dense layers.
+    Dropout Rates: For dropout_ohe_1, dropout_numerical_1, and the three combined_dropout layers.
+    L2 Regularization Factor: For the combined_dense layers.
+    Learning Rate: For the Adam optimizer.
+    Number of Combined Layers: We can even make the number of processing blocks in the combined section a hyperparameter (e.g., 1, 2, or 3 blocks). For this first pass, I'll keep it at 3 as per your current model but make units/dropout tunable for them.
+
+threshold for:
+    para ver a partir de que prob consideramos rechazo o no, arme un for que prueba distintos valores. Lo que buscamos en este modelo es minimizar la funcion de loss que definimos. 
+
+    pq no usamos f1 score:
+        The F1-score is a good general-purpose metric for balancing precision and recall, but it doesn't inherently know about your specific 5:1 cost ratio. It treats precision and recall "equally" in its harmonic mean calculation (or rather, it balances them without explicit cost weighting).
+
+
+
+nuestro objetivo no es ni accuracy, ni f1, ni precision o recall, nuestro objetivo es minimizar las perdidas
